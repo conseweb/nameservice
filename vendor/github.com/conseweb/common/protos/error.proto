@@ -1,0 +1,53 @@
+/*
+Copyright Mojing Inc. 2016 All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+		 http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+syntax = "proto3";
+
+package protos;
+
+enum ErrorType {
+    // everything is ok
+    NONE_ERROR = 0;
+    // request params is invalid
+    INVALID_PARAM = 1;
+    // system error
+    INTERNAL_ERROR = 2;
+    // user already sign up
+    ALREADY_SIGNUP = 3;
+    // captcha is invalid
+    INVALID_CAPTCHA = 4;
+    // user id is invalid
+    INVALID_USERID = 5;
+    // device can't be recognized
+    INVALID_DEVICE = 6;
+    // mac address already been taken by other device
+    ALREADY_DEVICE_MAC = 7;
+    // alias already benn taken by other device
+    ALREADY_DEVICE_ALIAS = 8;
+    // farmer online
+    INVALID_STATE_FARMER_ONLINE = 9;
+    // farmer offline
+    INVALID_STATE_FARMER_OFFLINE = 10;
+    // farmer challenge fail
+    FARMER_CHALLENGE_FAIL = 11;
+    // invalid signature
+    INVALID_SIGNATURE = 12;
+}
+
+message Error {
+    ErrorType errorType = 1;
+    string message = 2;
+}

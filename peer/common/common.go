@@ -19,8 +19,8 @@ package common
 import (
 	"fmt"
 
+	pb "github.com/conseweb/common/protos"
 	"github.com/hyperledger/fabric/core/peer"
-	pb "github.com/hyperledger/fabric/protos"
 	"github.com/spf13/cobra"
 )
 

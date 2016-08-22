@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package protos;
+
+//import "github.com/conseweb/common/protos/error.proto";
+import "error.proto";
+
+// farmer state
+enum FarmerState {
+    OFFLINE = 0;
+    ONLINE = 1;
+    LOST = 2;
+}
+
+// farmer account's info
+message FarmerAccount {
+    // farmer's id, unique
+    string farmerID = 1;
+    // used for election, used as vote
+    uint32 balance = 2;
+    // farmer state
+    FarmerState state = 3;
+    // last modified this obj's time
+    int64 lastModifiedTime = 4;
+    // last challenge blocks's hash's time
+    int64 lastChallengeTime = 5;
+}
+
+// farmer client can use the service to communicate with supervisor
+service FarmerPublic {
+    // when farmer lanch the cli(peer), it will call for notice supervisor that I'm online
+    rpc FarmerOnLine(FarmerOnLineReq) returns (FarmerOnLineRsp) {}
+
+    // every once in a while, farmer call for tell supervisor that how many blocks(range) stored in the farmer, supervisor return whelther need challenge that result randomly, if need, also return block range.
+    rpc FarmerPing(FarmerPingReq) returns (FarmerPingRsp) {}
+
+    // after FarmerPing, if need challenge, carry with blocks hash, if success, more balance(token) add
+    rpc FarmerConquerChallenge(FarmerConquerChallengeReq) returns (FarmerConquerChallengeRsp) {}
+
+    // farmer tell supervisor out of work
+    rpc FarmerOffLine(FarmerOffLineReq) returns (FarmerOffLineRsp) {}
+}
+
+message FarmerOnLineReq {
+    string farmerID = 1;
+}
+
+message FarmerOnLineRsp {
+    Error error = 1;
+    FarmerAccount account = 2;
+    int64 nextPing = 3;
+}
+
+message BlocksRange {
+    uint64 highBlockNumber = 1;
+    uint64 lowBlockNumber = 2;
+}
+
+message FarmerPingReq {
+    string farmerID = 1;
+    BlocksRange blocksRange = 2;
+}
+
+enum HashAlgo {
+    MD5 = 0;
+    SHA1 = 1;
+    SHA224 = 2;
+    SHA256 = 3;
+    SHA384 = 4;
+    SHA512 = 5;
+    SHA3224 = 6;
+    SHA3256 = 7;
+    SHA3384 = 8;
+    SHA3512 = 9;
+}
+
+message FarmerPingRsp {
+    Error error = 1;
+    FarmerAccount account = 2;
+    bool needChallenge = 3;
+    HashAlgo hashAlgo = 4;
+    BlocksRange blocksRange = 5;
+    int64 nextPing = 6;
+}
+
+message FarmerConquerChallengeReq {
+    string farmerID = 1;
+    string blocksHash = 2;
+    HashAlgo hashAlgo = 3;
+    BlocksRange blocksRange = 4;
+}
+
+message FarmerConquerChallengeRsp {
+    Error error = 1;
+    FarmerAccount account = 2;
+    bool conquerOK = 3;
+}
+
+message FarmerOffLineReq {
+    string farmerID = 1;
+}
+
+message FarmerOffLineRsp {
+    Error error = 1;
+    FarmerAccount account = 2;
+}
