@@ -1,31 +1,33 @@
 package daemon
 
 import (
-	"errors"
 	"fmt"
-	"net"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	pb "github.com/conseweb/common/protos"
 	"github.com/hyperledger/fabric/farmer/account"
-	fpb "github.com/hyperledger/fabric/protos"
+	// fpb "github.com/hyperledger/fabric/protos"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
-	"golang.org/x/net/context"
+	// "golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"google/protobuf"
+	// "google/protobuf"
 )
 
 const (
-	DefaultDaemonAddress = ":9375"
-	DefaultFarmerPath    = "/var/run/farmer"
+	DefaultListenAddr = ":9375"
+	DefaultFarmerPath = "/var/run/farmer"
 	// DefaultSocketFile    = DefaultFarmerPath + "/farmer.sock"
 	DefaultPidFile = DefaultFarmerPath + "/farmer.pid"
 
-	DefaultListenAddr     = ":9375"
+	// for grpc
 	DefaultSupervisorAddr = ":9376"
 	DefaultIDProviderAddr = ":9377"
+	defaultTimeout        = 3 * time.Second
 )
 
 var (
@@ -40,7 +42,14 @@ type Daemon struct {
 
 	farmerAccount *account.Account
 
+	pid    int
 	exitCh chan error
+	sync.Mutex
+
+	supervisorConn *grpc.ClientConn
+	idproviderConn *grpc.ClientConn
+	svCli          pb.FarmerPublicClient
+	idppCli        pb.IDPPClient
 }
 
 func NewDaemon() *Daemon {
@@ -49,7 +58,8 @@ func NewDaemon() *Daemon {
 		IDProviderAddr: DefaultIDProviderAddr,
 		ListenAddr:     DefaultListenAddr,
 
-		exitCh: make(chan int),
+		pid:    os.Getpid(),
+		exitCh: make(chan error),
 	}
 
 	svAddr := viper.GetString("farmer.supervisorAddress")
@@ -76,16 +86,17 @@ func (d *Daemon) Init() error {
 	if err := d.writePid(); err != nil {
 		return err
 	}
+	return nil
 }
 
-func (d *Daemon) waitExit() {
+func (d *Daemon) WaitExit() {
 	sigChan := make(chan os.Signal)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	select {
 	case <-sigChan:
 		logger.Info("exit by user.")
-		d.Exit()
+		d.Exit(nil)
 	case <-d.exitCh:
 		return
 	}
@@ -106,17 +117,19 @@ func (d *Daemon) Exit(err error) {
 	select {
 	case <-d.exitCh:
 		logger.Debug("exited already.")
+		return
 	default:
 		close(d.exitCh)
 	}
-	time.Sleep(3 * time.Second)
 
 	os.RemoveAll(DefaultPidFile)
+	d.CloseConn()
 
+	time.Sleep(3 * time.Second)
 	if err != nil {
-		logger.Errorf("farmer daemon(PID: %d) exit by error: %s", d.Pid, err)
+		logger.Errorf("farmer daemon(PID: %d) exit by error: %s", d.pid, err)
 	} else {
-		logger.Infof("farmer daemon(PID: %d) exit...", d.Pid)
+		logger.Infof("farmer daemon(PID: %d) exit...", d.pid)
 	}
 	os.Exit(0)
 }
@@ -128,29 +141,24 @@ func (d *Daemon) GetLogger() *logging.Logger {
 	return logging.MustGetLogger("daemon")
 }
 
-// Return the serve status.
-func (d *Daemon) GetFarmerStatus(ctx context.Context, in *google_protobuf.Empty, opts ...grpc.CallOption) (*fpb.FarmerStatus, error) {
-	return nil, nil
-}
-
-func (d *Daemon) StartFarmer(ctx context.Context, in *fpb.FarmerUser, opts ...grpc.CallOption) (*fpb.Response, error) {
-	return nil, nil
-}
-
-func (d *Daemon) StopFarmer(ctx context.Context, in *google_protobuf.Empty, opts ...grpc.CallOption) (*fpb.FarmerStatus, error) {
-	return nil, nil
-}
-
-func (d *Daemon) proxyFarmerPublic() {
-	opts := []grpc.DialOption{
-		grpc.WithInsecure(),
-		grpc.WithBlock(),
+func (d *Daemon) ResetAccount(a *account.Account) {
+	d.Lock()
+	defer d.Unlock()
+	if a != nil {
+		d.farmerAccount = a
 	}
-
-	conn, err := grpc.Dial(SupervisorAddr, opts...)
-	if err != nil {
-		logger.Error(err)
-	}
-
-	client := pb.NewFarmerPublicClient()
 }
+
+// func (d *Daemon) proxyFarmerPublic() {
+// 	opts := []grpc.DialOption{
+// 		grpc.WithInsecure(),
+// 		grpc.WithBlock(),
+// 	}
+
+// 	conn, err := grpc.Dial(d.SupervisorAddr, opts...)
+// 	if err != nil {
+// 		logger.Error(err)
+// 	}
+
+// 	client := pb.NewFarmerPublicClient()
+// }

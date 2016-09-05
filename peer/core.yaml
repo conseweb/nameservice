@@ -90,7 +90,7 @@ daemon:
 farmer:
     id: hello
     supervisorAddress: 0.0.0.0:9376
-    idproviderAddress: 0.0.0.0:9377
+    idproviderAddress: 172.17.0.5:7054
 
 
 ###############################################################################

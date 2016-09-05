@@ -3,7 +3,7 @@ package farmer
 import (
 	"fmt"
 
-	fm "github.com/hyperledger/fabric/farmer"
+	// fm "github.com/hyperledger/fabric/farmer"
 	"github.com/op/go-logging"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -13,37 +13,28 @@ const (
 	farmerFuncName = "farmer"
 )
 
-var logger = logging.MustGetLogger("farmerCmd")
-
 var (
+	logger = logging.MustGetLogger("farmerCmd")
+
 	farmerUserID         string
 	farmerSupervisorAddr string
-)
+	isDaemon             bool
 
-// Cmd returns the cobra command for Node
-func Cmd() *cobra.Command {
-	flags := chaincodeCmd.PersistentFlags()
-
-	// TODO: more falgs
-	flags.StringVarP(&farmerUserID, "userID", "u", "", "Your Account ID")
-	flags.StringVarP(&farmerSupervisorAddr, "supervisorAddr", "a", "", "Supervisor Address")
-
-	nodeCmd := &cobra.Command{
+	farmerCmd = &cobra.Command{
 		Use:   farmerFuncName,
 		Short: fmt.Sprintf("%s specific commands.", farmerFuncName),
 		Long:  fmt.Sprintf("%s specific commands.", farmerFuncName),
 	}
+)
 
-	loginCmd := &cobra.Command{
-		Use:   "login",
-		Short: "User Login.",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return ParseArgs()
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return login(args)
-		},
-	}
+// Cmd returns the cobra command for Node
+func Cmd() *cobra.Command {
+	// flags := farmerCmd.PersistentFlags()
+
+	// // TODO: more falgs
+	// flags.StringVarP(&farmerUserID, "userID", "u", "", "Your Account ID")
+	// flags.StringVarP(&farmerSupervisorAddr, "supervisorAddr", "a", "", "Supervisor Address")
+
 	logoutCmd := &cobra.Command{
 		Use:   "logout",
 		Short: "User Logout.",
@@ -52,10 +43,10 @@ func Cmd() *cobra.Command {
 		},
 	}
 
-	nodeCmd.AddCommand(loginCmd)
-	nodeCmd.AddCommand(logoutCmd)
+	farmerCmd.AddCommand(startCmd())
+	farmerCmd.AddCommand(logoutCmd)
 
-	return nodeCmd
+	return farmerCmd
 }
 
 func ParseArgs() error {
@@ -76,8 +67,7 @@ func ParseArgs() error {
 	return nil
 }
 
-func login(args []string) error {
-	fm.Login()
+func start(args []string) error {
 	return nil
 }
 

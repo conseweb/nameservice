@@ -1,5 +1,6 @@
 /*
 Copyright Mojing Inc. 2016 All Rights Reserved.
+Written by mint.zhao.chiu@gmail.com. github.com: https://www.github.com/mintzhao
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

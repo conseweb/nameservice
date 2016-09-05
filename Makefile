@@ -75,6 +75,13 @@ PWD := $(shell pwd)
 IMAGE := ckeyer/obc:dev
 INNER_GOPATH := /opt/gopath
 
+ASSET := HEAD
+DIST_URL := "http://ckeyer:Nzf6tDiWLwEuqW2krQDd@d.cj0.pw/farmer-ui-$(ASSET).tgz"
+assets:
+	curl -sS $(DIST_URL)|gzip -dc|tar x
+	cd dist && go-bindata -o ../farmer/api/views/assets.go -pkg=views ./...
+	rm -rf dist
+
 all: peer membersrvc checks
 
 checks: linter unit-test behave
@@ -271,11 +278,21 @@ dist-clean: clean gotools-clean
 
 dev:
 	docker run --rm \
+	 -p 9375:9375 \
+	 -p 7050:7050 \
 	 --name dev \
 	 -v $(PWD):$(INNER_GOPATH)/src/$(PKGNAME) \
 	 -w $(INNER_GOPATH)/src/$(PKGNAME) \
 	 -v /var/run/docker.sock:/var/run/docker.sock \
 	 -it $(IMAGE) bash
 
-build-local:
-	go run -o bin/farmer peer/main.go
+local: clean-runing-file local-build daemon
+
+local-build:
+	go build -o bin/farmer ./peer/main.go
+
+daemon: 
+	./bin/farmer farmer start
+
+clean-runing-file:
+	rm -rf /var/run/farmer/*

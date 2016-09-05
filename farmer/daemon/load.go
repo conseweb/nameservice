@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+
+	"github.com/spf13/viper"
 )
 
 func LoadDaemon() (*Daemon, error) {
@@ -31,7 +33,7 @@ func LoadDaemon() (*Daemon, error) {
 
 	addr := viper.GetString("daemon.address")
 	if addr == "" {
-		addr = DefaultDaemonAddress
+		addr = DefaultListenAddr
 	}
 
 	d := NewDaemon()

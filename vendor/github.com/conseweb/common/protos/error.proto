@@ -1,5 +1,6 @@
 /*
 Copyright Mojing Inc. 2016 All Rights Reserved.
+Written by mint.zhao.chiu@gmail.com. github.com: https://www.github.com/mintzhao
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -45,6 +46,14 @@ enum ErrorType {
     FARMER_CHALLENGE_FAIL = 11;
     // invalid signature
     INVALID_SIGNATURE = 12;
+    // not in lottery interval
+    NOT_IN_LOTTERY_INTERVAL = 13;
+    // in lottery interval
+    IN_LOTTERY_INTERVAL = 14;
+    // already lottery
+    ALREADY_RECEIVED_LOTTERY = 15;
+    // inappropriate device role
+    INAPPROPRIATE_DEVICE_ROLE = 16;
 }
 
 message Error {
