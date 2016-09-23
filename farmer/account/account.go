@@ -3,7 +3,6 @@ package account
 import (
 	"crypto/x509"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/conseweb/common/hdwallet"
@@ -125,6 +124,8 @@ func (a *Account) Registry(idpCli pb.IDPPClient) error {
 		return fmt.Errorf("got nil user.")
 	}
 	a.ID = ru.UserID
+
+	a.Save()
 	return nil
 }
 
@@ -132,6 +133,6 @@ func (a *Account) Logout() error {
 	return nil
 }
 
-func (a *Account) Save(rw io.Writer) error {
+func (a *Account) Save() error {
 	return nil
 }

@@ -21,9 +21,10 @@ const (
 )
 
 var (
-	log     *logging.Logger
-	headers map[string]string
-	daemon  *daepkg.Daemon
+	log         *logging.Logger
+	headers     map[string]string
+	daemon      *daepkg.Daemon
+	proxyClient *http.Client
 )
 
 type RequestContext struct {
@@ -101,12 +102,11 @@ func Serve(d *daepkg.Daemon) error {
 			r.Delete("/unbind", Hello)
 		})
 
-		r.Any("/node", Hello)
-
-		// setting
-		// node
-		// chaincode
-		// network
+		r.Any("/chain/**", ProxyFabric)
+		r.Any("/chaincode/**", ProxyFabric)
+		r.Any("/registrar/**", ProxyFabric)
+		r.Any("/transactions/**", ProxyFabric)
+		r.Any("/network/**", ProxyFabric)
 	})
 
 	server := &http.Server{

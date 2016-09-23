@@ -377,3 +377,7 @@ func getSecHelper() (crypto.Peer, error) {
 	})
 	return secHelper, err
 }
+
+func Start() error {
+	return serve([]string{})
+}

@@ -2,19 +2,21 @@ package daemon
 
 import (
 	"fmt"
+	"github.com/hyperledger/fabric/peer/node"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
 
 	pb "github.com/conseweb/common/protos"
 	"github.com/hyperledger/fabric/farmer/account"
-	// fpb "github.com/hyperledger/fabric/protos"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
-	// "golang.org/x/net/context"
 	"google.golang.org/grpc"
+	// fpb "github.com/hyperledger/fabric/protos"
+	// "golang.org/x/net/context"
 	// "google/protobuf"
 )
 
@@ -39,6 +41,7 @@ type Daemon struct {
 	SupervisorAddr string
 	IDProviderAddr string
 	ListenAddr     string
+	RESTURL        string
 
 	farmerAccount *account.Account
 
@@ -57,6 +60,7 @@ func NewDaemon() *Daemon {
 		SupervisorAddr: DefaultSupervisorAddr,
 		IDProviderAddr: DefaultIDProviderAddr,
 		ListenAddr:     DefaultListenAddr,
+		RESTURL:        viper.GetString("rest.address"),
 
 		pid:    os.Getpid(),
 		exitCh: make(chan error),
@@ -147,6 +151,30 @@ func (d *Daemon) ResetAccount(a *account.Account) {
 	if a != nil {
 		d.farmerAccount = a
 	}
+}
+
+func (d *Daemon) GetRESTAddr() string {
+	if d.RESTURL == "" {
+		d.GetLogger().Warningf("rest_url is null")
+		return ""
+	}
+
+	hostport := strings.Split(d.RESTURL, ":")
+	if len(hostport) != 2 {
+		d.GetLogger().Errorf("invalid rest addr %+v", hostport)
+		return ""
+	}
+
+	host, port := hostport[0], hostport[1]
+	if host == "" || host == "0.0.0.0" {
+		host = "localhost"
+	}
+
+	return fmt.Sprintf("%s:%s", host, port)
+}
+
+func (d *Daemon) StartNode() error {
+	return node.Start()
 }
 
 // func (d *Daemon) proxyFarmerPublic() {

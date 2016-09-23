@@ -1,10 +1,10 @@
 package farmer
 
 import (
-	// pb "github.com/conseweb/common/protos"
 	"github.com/hyperledger/fabric/farmer/api"
 	"github.com/hyperledger/fabric/farmer/daemon"
 	// "github.com/hyperledger/fabric/flogging"
+	// pb "github.com/conseweb/common/protos"
 	// "github.com/op/go-logging"
 )
 
@@ -15,8 +15,14 @@ func StartFarmer() {
 	}
 
 	go func() {
-		if err := api.Serve(d); err != nil {
+		if err := d.StartNode(); err != nil {
+			panic(err)
+		}
+	}()
 
+	go func() {
+		if err := api.Serve(d); err != nil {
+			panic(err)
 		}
 	}()
 	d.WaitExit()
