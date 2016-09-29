@@ -46,11 +46,11 @@ var nodeStopCmd = &cobra.Command{
 	Short: "Stops the running node.",
 	Long:  `Stops the running node, disconnecting from the network.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		stop()
+		Stop()
 	},
 }
 
-func stop() (err error) {
+func Stop() (err error) {
 	clientConn, err := peer.NewPeerClientConnection()
 	if err != nil {
 		pidFile := stopPidFile + "/peer.pid"

@@ -15,7 +15,7 @@ func StartFarmer() {
 	}
 
 	go func() {
-		if err := d.StartNode(); err != nil {
+		if err := d.StartPeer(); err != nil {
 			panic(err)
 		}
 	}()
@@ -29,5 +29,6 @@ func StartFarmer() {
 }
 
 func StopFarmer() error {
+
 	return nil
 }

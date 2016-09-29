@@ -57,6 +57,9 @@ It has these top-level messages:
 	SendLotteryLxRsp
 	StartLotteryReq
 	StartLotteryRsp
+	GetLotteryResultReq
+	LotteryResult
+	GetLotteryResultRsp
 */
 package protos
 

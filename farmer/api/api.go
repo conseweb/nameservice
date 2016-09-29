@@ -102,6 +102,12 @@ func Serve(d *daepkg.Daemon) error {
 			r.Delete("/unbind", Hello)
 		})
 
+		r.Group("/peer", func(r martini.Router) {
+			r.Patch("/start", StartPeer)
+			r.Patch("/stop", StopPeer)
+			r.Patch("/restart", RestartPeer)
+		})
+
 		r.Any("/chain/**", ProxyFabric)
 		r.Any("/chaincode/**", ProxyFabric)
 		r.Any("/registrar/**", ProxyFabric)

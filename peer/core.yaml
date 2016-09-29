@@ -81,6 +81,9 @@ daemon:
     # address: unix:///var/run/farmer.sock 
     address: 0.0.0.0:9375
 
+    # Run mode, 
+    dev: true
+
 
 ###############################################################################
 #

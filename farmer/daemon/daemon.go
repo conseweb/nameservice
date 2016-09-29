@@ -173,8 +173,12 @@ func (d *Daemon) GetRESTAddr() string {
 	return fmt.Sprintf("%s:%s", host, port)
 }
 
-func (d *Daemon) StartNode() error {
+func (d *Daemon) StartPeer() error {
 	return node.Start()
+}
+
+func (d *Daemon) StopPeer() error {
+	return node.Stop()
 }
 
 // func (d *Daemon) proxyFarmerPublic() {

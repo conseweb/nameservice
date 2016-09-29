@@ -9,7 +9,7 @@ import (
 	pb "github.com/conseweb/common/protos"
 	"github.com/hyperledger/fabric/core/crypto/primitives"
 	"github.com/op/go-logging"
-	// "github.com/spf13/viper"
+	"github.com/spf13/viper"
 	// "golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/context"
 	// "google.golang.org/grpc"
@@ -48,7 +48,9 @@ func NewAccount(nickname, phone, email, pass, lang string) *Account {
 	if l, ok := LanguageSupport[lang]; ok {
 		language = l
 	}
-	ph, hd := hdwallet.NewHDWallet(pass, language)
+
+	dev_mode := viper.GetBool("daemon.dev")
+	ph, hd := hdwallet.NewHDWallet(pass, language, dev_mode)
 	return &Account{
 		Phone:    phone,
 		Email:    email,
@@ -103,8 +105,8 @@ func (a *Account) Registry(idpCli pb.IDPPClient) error {
 		Spub: pubraw,
 		Sign: []byte("ffff"),
 	}
-	if ok, _ := checkPhone(regUser.SignUp); !ok {
-		if ok, _ := checkEmail(a.Email); !ok {
+	if ok := checkPhone(regUser.SignUp); !ok {
+		if ok := checkEmail(a.Email); !ok {
 			return fmt.Errorf("Email and phone need at least one.")
 		}
 		regUser.SignUpType = pb.SignUpType_EMAIL

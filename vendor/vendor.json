@@ -38,22 +38,22 @@
 			"revisionTime": "2015-01-14T23:56:00Z"
 		},
 		{
-			"checksumSHA1": "FMLkCJuXGTLQyeUmABm/cerbzuQ=",
+			"checksumSHA1": "cIIMVM13iFdsNg5K2nwFVJRnDqE=",
 			"path": "github.com/conseweb/common/hdwallet",
-			"revision": "dd5300ac0605b89cbbe69f1203bc1cd499dfb986",
-			"revisionTime": "2016-09-20T10:43:57Z"
+			"revision": "ccaee49db1e6ab8a122ee8bc611f0ddf8c412e6c",
+			"revisionTime": "2016-09-23T08:31:28Z"
 		},
 		{
 			"checksumSHA1": "JXeXHdMq74v1Z5ZKZ3tUO//XRVE=",
 			"path": "github.com/conseweb/common/passphrase",
-			"revision": "dd5300ac0605b89cbbe69f1203bc1cd499dfb986",
-			"revisionTime": "2016-09-20T10:43:57Z"
+			"revision": "ccaee49db1e6ab8a122ee8bc611f0ddf8c412e6c",
+			"revisionTime": "2016-09-23T08:31:28Z"
 		},
 		{
-			"checksumSHA1": "4tnzLx+eMKdfh2mVHg1z+hkXJtA=",
+			"checksumSHA1": "gS0uF7dvZqg9fySRMyrPae914uQ=",
 			"path": "github.com/conseweb/common/protos",
-			"revision": "dd5300ac0605b89cbbe69f1203bc1cd499dfb986",
-			"revisionTime": "2016-09-20T10:43:57Z"
+			"revision": "ccaee49db1e6ab8a122ee8bc611f0ddf8c412e6c",
+			"revisionTime": "2016-09-23T08:31:28Z"
 		},
 		{
 			"path": "github.com/cpuguy83/go-md2man/md2man",

@@ -1,9 +1,9 @@
 package account
 
-func checkPhone(phone string) (bool, error) {
-	return phone == "", nil
+func checkPhone(phone string) bool {
+	return phone == ""
 }
 
-func checkEmail(email string) (bool, error) {
-	return email == "", nil
+func checkEmail(email string) bool {
+	return email == ""
 }

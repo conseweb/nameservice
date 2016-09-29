@@ -3,7 +3,6 @@ package hdwallet
 import (
 	"bytes"
 	"crypto/hmac"
-	"crypto/rand"
 	"crypto/sha512"
 	"encoding/hex"
 	"errors"
@@ -40,10 +39,45 @@ type HDWallet struct {
 	key         []byte //33 bytes
 }
 
-func NewHDWallet(pass string, lang protos.PassphraseLanguage) (string, *HDWallet) {
+func NewHDWallet(pass string, lang protos.PassphraseLanguage, test bool) (string, *HDWallet) {
 	ph, _ := passphrase.Passphrase(256, lang)
 	seed := passphrase.NewSeed(ph, pass)
-	return ph, MasterKey(seed)
+	return ph, MasterKey(seed, test)
+}
+
+// MasterKey returns a new wallet given a random seed.
+func MasterKey(seed []byte, test bool) *HDWallet {
+	key := []byte("Lepusio seed")
+	mac := hmac.New(sha512.New, key)
+	mac.Write(seed)
+	I := mac.Sum(nil)
+	secret := I[:len(I)/2]
+	chain_code := I[len(I)/2:]
+	depth := 0
+	i := make([]byte, 4)
+	fingerprint := make([]byte, 4)
+	zero := make([]byte, 1)
+
+	version := version_mainnet_pri
+	if test {
+		version = version_testnet_pri
+	}
+	return &HDWallet{version, uint16(depth), fingerprint, i, chain_code, append(zero, secret...)}
+}
+
+// Pub returns a new wallet which is the public key version of w.
+// If w is a public key, Pub returns a copy of w
+func (w *HDWallet) Pub() *HDWallet {
+	switch {
+	case bytes.Compare(w.version, version_mainnet_pub) == 0, bytes.Compare(w.version, version_testnet_pub) == 0:
+		return &HDWallet{w.version, w.depth, w.fingerprint, w.childnumber, w.chaincode, w.key}
+	case bytes.Compare(w.version, version_mainnet_pri) == 0:
+		return &HDWallet{version_mainnet_pub, w.depth, w.fingerprint, w.childnumber, w.chaincode, privToPub(w.key)}
+	case bytes.Compare(w.version, version_testnet_pri) == 0:
+		return &HDWallet{version_testnet_pub, w.depth, w.fingerprint, w.childnumber, w.chaincode, privToPub(w.key)}
+	}
+
+	return nil
 }
 
 // Child returns the ith child of wallet w. Values of i >= 2^31
@@ -85,73 +119,6 @@ func (w *HDWallet) Child(i uint32) (*HDWallet, error) {
 	return &HDWallet{w.version, w.depth + 1, fingerprint, uint32ToByte(i), I[32:], newkey}, nil
 }
 
-// Serialize returns the serialized form of the wallet.
-func (w *HDWallet) Serialize() []byte {
-	depth := uint16ToByte(uint16(w.depth % 256))
-	//bindata = vbytes||depth||fingerprint||i||chaincode||key
-	bindata := append(w.version, append(depth, append(w.fingerprint, append(w.childnumber, append(w.chaincode, w.key...)...)...)...)...)
-	chksum := dblSha256(bindata)[:4]
-	return append(bindata, chksum...)
-}
-
-// String returns the base58-encoded string form of the wallet.
-func (w *HDWallet) String() string {
-	return base58.Encode(w.Serialize())
-}
-
-// StringWallet returns a wallet given a base58-encoded extended key
-func StringWallet(data string) (*HDWallet, error) {
-	dbin := base58.Decode(data)
-	if err := ByteCheck(dbin); err != nil {
-		return &HDWallet{}, err
-	}
-	if bytes.Compare(dblSha256(dbin[:(len(dbin) - 4)])[:4], dbin[(len(dbin)-4):]) != 0 {
-		return &HDWallet{}, errors.New("Invalid checksum")
-	}
-	vbytes := dbin[0:4]
-	depth := byteToUint16(dbin[4:5])
-	fingerprint := dbin[5:9]
-	i := dbin[9:13]
-	chaincode := dbin[13:45]
-	key := dbin[45:78]
-	return &HDWallet{vbytes, depth, fingerprint, i, chaincode, key}, nil
-}
-
-// Pub returns a new wallet which is the public key version of w.
-// If w is a public key, Pub returns a copy of w
-func (w *HDWallet) Pub() *HDWallet {
-	if bytes.Compare(w.version, version_mainnet_pub) == 0 {
-		return &HDWallet{w.version, w.depth, w.fingerprint, w.childnumber, w.chaincode, w.key}
-	} else {
-		return &HDWallet{version_mainnet_pub, w.depth, w.fingerprint, w.childnumber, w.chaincode, privToPub(w.key)}
-	}
-}
-
-// StringChild returns the ith base58-encoded extended key of a base58-encoded extended key.
-func StringChild(data string, i uint32) (string, error) {
-	w, err := StringWallet(data)
-	if err != nil {
-		return "", err
-	} else {
-		w, err = w.Child(i)
-		if err != nil {
-			return "", err
-		} else {
-			return w.String(), nil
-		}
-	}
-}
-
-//StringToAddress returns the Bitcoin address of a base58-encoded extended key.
-func StringAddress(data string) (string, error) {
-	w, err := StringWallet(data)
-	if err != nil {
-		return "", err
-	} else {
-		return w.Address(), nil
-	}
-}
-
 // Address returns bitcoin address represented by wallet w.
 func (w *HDWallet) Address() string {
 	x, y := expand(w.key)
@@ -168,30 +135,61 @@ func (w *HDWallet) Address() string {
 	return base58.Encode(append(addr_1, chksum[:4]...))
 }
 
-// GenSeed returns a random seed with a length measured in bytes.
-// The length must be at least 128.
-func GenSeed(length int) ([]byte, error) {
-	b := make([]byte, length)
-	if length < 128 {
-		return b, errors.New("length must be at least 128 bits")
-	}
-	_, err := rand.Read(b)
-	return b, err
+// Serialize returns the serialized form of the wallet.
+func (w *HDWallet) Serialize() []byte {
+	depth := uint16ToByte(uint16(w.depth % 256))
+	//bindata = vbytes||depth||fingerprint||i||chaincode||key
+	bindata := append(w.version, append(depth, append(w.fingerprint, append(w.childnumber, append(w.chaincode, w.key...)...)...)...)...)
+	chksum := dblSha256(bindata)[:4]
+	return append(bindata, chksum...)
 }
 
-// MasterKey returns a new wallet given a random seed.
-func MasterKey(seed []byte) *HDWallet {
-	key := []byte("Bitcoin seed")
-	mac := hmac.New(sha512.New, key)
-	mac.Write(seed)
-	I := mac.Sum(nil)
-	secret := I[:len(I)/2]
-	chain_code := I[len(I)/2:]
-	depth := 0
-	i := make([]byte, 4)
-	fingerprint := make([]byte, 4)
-	zero := make([]byte, 1)
-	return &HDWallet{version_mainnet_pri, uint16(depth), fingerprint, i, chain_code, append(zero, secret...)}
+// String returns the base58-encoded string form of the wallet.
+func (w *HDWallet) String() string {
+	return base58.Encode(w.Serialize())
+}
+
+// ParseStringWallet returns a wallet given a base58-encoded extended key
+func ParseStringWallet(data string) (*HDWallet, error) {
+	dbin := base58.Decode(data)
+	if err := ByteCheck(dbin); err != nil {
+		return &HDWallet{}, err
+	}
+	if bytes.Compare(dblSha256(dbin[:(len(dbin) - 4)])[:4], dbin[(len(dbin)-4):]) != 0 {
+		return &HDWallet{}, errors.New("Invalid checksum")
+	}
+	vbytes := dbin[0:4]
+	depth := byteToUint16(dbin[4:5])
+	fingerprint := dbin[5:9]
+	i := dbin[9:13]
+	chaincode := dbin[13:45]
+	key := dbin[45:78]
+	return &HDWallet{vbytes, depth, fingerprint, i, chaincode, key}, nil
+}
+
+// StringWalletChild returns the ith base58-encoded extended key of a base58-encoded extended key.
+func StringWalletChild(data string, i uint32) (string, error) {
+	w, err := ParseStringWallet(data)
+	if err != nil {
+		return "", err
+	} else {
+		w, err = w.Child(i)
+		if err != nil {
+			return "", err
+		} else {
+			return w.String(), nil
+		}
+	}
+}
+
+//StringToAddress returns the Bitcoin address of a base58-encoded extended key.
+func StringToAddress(data string) (string, error) {
+	w, err := ParseStringWallet(data)
+	if err != nil {
+		return "", err
+	} else {
+		return w.Address(), nil
+	}
 }
 
 // StringCheck is a validation check of a base58-encoded extended key.
