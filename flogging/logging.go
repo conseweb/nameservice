@@ -89,9 +89,20 @@ func DefaultLoggingLevel() logging.Level {
 
 // Initiate 'leveled' logging to stderr.
 func init() {
-
+	jsonLogger()
+	return
 	format := logging.MustStringFormatter(
 		"%{color}%{time:15:04:05.000} [%{module}] %{shortfunc} -> %{level:.4s} %{id:03x}%{color:reset} %{message}",
+	)
+
+	backend := logging.NewLogBackend(os.Stderr, "", 0)
+	backendFormatter := logging.NewBackendFormatter(backend, format)
+	logging.SetBackend(backendFormatter).SetLevel(loggingDefaultLevel, "")
+}
+
+func jsonLogger() {
+	format := logging.MustStringFormatter(
+		`{"time":"%{time:15:04:05.000}", "module":"%{module}", "func":"%{shortfunc}", "level":"%{level:.4s}", "id":"%{id:03x}", "message":"%{message}"}`,
 	)
 
 	backend := logging.NewLogBackend(os.Stderr, "", 0)

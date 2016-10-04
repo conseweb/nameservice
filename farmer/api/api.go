@@ -107,7 +107,9 @@ func Serve(d *daepkg.Daemon) error {
 			r.Patch("/stop", StopPeer)
 			r.Patch("/restart", RestartPeer)
 		})
-
+		r.Group("/metrics", func(r martini.Router) {
+			r.Get("", GetMetrics)
+		})
 		r.Any("/chain/**", ProxyFabric)
 		r.Any("/chaincode/**", ProxyFabric)
 		r.Any("/registrar/**", ProxyFabric)
