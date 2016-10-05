@@ -132,6 +132,19 @@ func Registry(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
 	ctx.rnd.JSON(201, acc)
 }
 
+func UnbindDevide(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+	// registry
+	cli, err := daemon.GetIDPClient()
+	if err != nil {
+		ctx.Error(500, err)
+		return
+	}
+}
+
+func BindDevide(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+
+}
+
 func Login(ctx *RequestContext) {
 
 	ctx.res.WriteHeader(200)

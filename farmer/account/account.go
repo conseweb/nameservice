@@ -40,6 +40,8 @@ type Account struct {
 	Passphrase string `json:"passphrase"`
 	Wallet     *hdwallet.HDWallet
 
+	Devices []*Device
+
 	logger *logging.Logger
 }
 
@@ -129,6 +131,37 @@ func (a *Account) Registry(idpCli pb.IDPPClient) error {
 
 	a.Save()
 	return nil
+}
+
+func (a *Account) BindDevice(idpCli pb.IDPPClient) error {
+	priv, err := primitives.NewECDSAKey()
+	if err != nil {
+		return err
+	}
+
+	pubraw, err := x509.MarshalPKIXPublicKey(&priv.PublicKey)
+	if err != nil {
+		return err
+	}
+
+	wlt, err := a.Wallet.Child(0)
+	if err != nil {
+		return err
+	}
+
+	devReq := &pb.BindDeviceReq{
+		UserID: a.ID,
+		Os:     "linux",
+		For:    pb.DeviceFor_FARMER,
+		Mac:    "mac",
+		Alias:  "haha",
+
+		Wpub: []byte(wlt.Pub().String()),
+		// device signature public key
+		Spub: pubraw,
+		// request signature, though has spub, but using user's spub signature this message, dont forget!
+		Sign: []byte("ffff"),
+	}
 }
 
 func (a *Account) Logout() error {

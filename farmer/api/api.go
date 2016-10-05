@@ -97,7 +97,6 @@ func Serve(d *daepkg.Daemon) error {
 			r.Patch("/setting", Hello)
 		})
 		r.Group("/device", func(r martini.Router) {
-			r.Get("")
 			r.Post("/bind", Hello)
 			r.Delete("/unbind", Hello)
 		})
