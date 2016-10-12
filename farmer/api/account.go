@@ -12,7 +12,7 @@ import (
 )
 
 type accountWrapper struct {
-	// sign type
+	// sign type email/phone
 	Type     string `json:"type"`
 	Email    string `json:"email"`
 	Phone    string `json:"phone"`
@@ -45,6 +45,7 @@ func (a *accountWrapper) ToAccount() (*account.Account, error) {
 	return account.NewAccount(a.NickName, a.Phone, a.Email, a.Password, a.Language), nil
 }
 
+// POST /signup/:vtype
 func RegVerificationType(rw http.ResponseWriter, req *http.Request, ctx *RequestContext, params martini.Params) {
 	var user accountWrapper
 
@@ -74,6 +75,7 @@ func RegVerificationType(rw http.ResponseWriter, req *http.Request, ctx *Request
 	rw.WriteHeader(200)
 }
 
+// PUT /signup/captcha
 func VerifyCaptcha(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
 	var user accountWrapper
 
@@ -103,6 +105,7 @@ func VerifyCaptcha(rw http.ResponseWriter, req *http.Request, ctx *RequestContex
 	rw.WriteHeader(200)
 }
 
+// POST /signup
 func Registry(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
 	var user accountWrapper
 	err := json.NewDecoder(req.Body).Decode(&user)
@@ -118,6 +121,7 @@ func Registry(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
 		return
 	}
 
+	// Try to new a Account.
 	acc, err := user.ToAccount()
 	if err != nil {
 		ctx.Error(400, err)
@@ -132,22 +136,29 @@ func Registry(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
 	ctx.rnd.JSON(201, acc)
 }
 
+func Login(ctx *RequestContext) {
+	var user accountWrapper
+	json.NewDecoder(ctx.req.Body).Decode(&user)
+
+	ctx.res.WriteHeader(200)
+}
+
+func Logout(ctx *RequestContext) {
+
+	ctx.res.WriteHeader(200)
+}
+
 func UnbindDevide(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
 	// registry
-	cli, err := daemon.GetIDPClient()
-	if err != nil {
-		ctx.Error(500, err)
-		return
-	}
+	// cli, err := daemon.GetIDPClient()
+	// if err != nil {
+	// 	ctx.Error(500, err)
+	// 	return
+	// }
 }
 
 func BindDevide(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
 
-}
-
-func Login(ctx *RequestContext) {
-
-	ctx.res.WriteHeader(200)
 }
 
 func OnlineAccount(ctx *RequestContext) {

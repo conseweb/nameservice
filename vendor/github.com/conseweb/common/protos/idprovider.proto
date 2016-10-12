@@ -30,6 +30,8 @@ service IDPP {
     rpc VerifyCaptcha(VerifyCaptchaReq) returns (VerifyCaptchaRsp) {}
     // Register a user
     rpc RegisterUser(RegisterUserReq) returns (RegisterUserRsp) {}
+    // Login a user
+    rpc LoginUser(LoginUserReq) returns (LoginUserRsp) {}
     // Bind a device for a user
     rpc BindDeviceForUser(BindDeviceReq) returns (BindDeviceRsp) {}
 }
@@ -44,6 +46,12 @@ service IDPA {
 enum SignUpType {
     EMAIL = 0;
     MOBILE = 1;
+}
+
+enum SignInType {
+    SI_EMAIL = 0;
+    SI_MOBILE = 1;
+    SI_USERID = 2;
 }
 
 // user type
@@ -133,6 +141,19 @@ message RegisterUserReq {
 }
 
 message RegisterUserRsp {
+    Error error = 1;
+    User user = 2;
+}
+
+message LoginUserReq {
+    SignInType signInType = 1;
+    // email or mobile or userid
+    string signIn = 2;
+    string password = 3;
+    bytes sign = 4;
+}
+
+message LoginUserRsp {
     Error error = 1;
     User user = 2;
 }

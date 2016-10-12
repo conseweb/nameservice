@@ -40,7 +40,7 @@ type Account struct {
 	Passphrase string `json:"passphrase"`
 	Wallet     *hdwallet.HDWallet
 
-	Devices []*Device
+	Devices []Device
 
 	logger *logging.Logger
 }
@@ -64,25 +64,6 @@ func NewAccount(nickname, phone, email, pass, lang string) *Account {
 		Wallet:     hd,
 		logger:     logging.MustGetLogger("farmer"),
 	}
-}
-
-func (a *Account) Login(client pb.FarmerPublicClient) error {
-	if a.ID == "" {
-		return fmt.Errorf("account id required")
-	}
-
-	onlineReq := &pb.FarmerOnLineReq{FarmerID: a.ID}
-	a.logger.Debugf("login with %+v", a)
-	onlineRes, err := client.FarmerOnLine(context.Background(), onlineReq)
-	if err != nil {
-		return err
-	}
-	if onlineRes.Error != nil {
-		a.logger.Errorf("login error: %#v", onlineRes.Error)
-		return onlineRes.Error
-	}
-
-	return nil
 }
 
 func (a *Account) Registry(idpCli pb.IDPPClient) error {
@@ -115,20 +96,53 @@ func (a *Account) Registry(idpCli pb.IDPPClient) error {
 		regUser.SignUp = a.Email
 	}
 
-	rsp, err := idpCli.RegisterUser(context.Background(), regUser)
+	resp, err := idpCli.RegisterUser(context.Background(), regUser)
 	if err != nil {
 		return err
 	}
-	if rsp.GetError() != nil && rsp.GetError().ErrorType != pb.ErrorType_NONE_ERROR {
-		return rsp.GetError()
+	if resp.GetError() != nil && resp.GetError().ErrorType != pb.ErrorType_NONE_ERROR {
+		return resp.GetError()
 	}
 
-	ru := rsp.GetUser()
+	ru := resp.GetUser()
 	if ru == nil {
 		return fmt.Errorf("got nil user.")
 	}
 	a.ID = ru.UserID
 
+	a.Save()
+	return nil
+}
+
+func (a *Account) Login(idpCli pb.IDPPClient, typ pb.SignInType, signup, password string) error {
+	req := &pb.LoginUserReq{
+		SignInType: typ,
+		SignIn:     signup,
+		Password:   password,
+		Sign:       []byte("ffff"),
+	}
+
+	resp, err := idpCli.LoginUser(context.Background(), req)
+	if err != nil {
+		return err
+	}
+	if resp.GetError() != nil && resp.GetError().ErrorType != pb.ErrorType_NONE_ERROR {
+		return resp.GetError()
+	}
+
+	ru := resp.GetUser()
+	if ru == nil {
+		return fmt.Errorf("got nil user.")
+	}
+	a.ID = ru.UserID
+	a.Phone = ru.Mobile
+	a.Email = ru.Email
+	a.NickName = ru.Nick
+
+	a.Devices = []Device{}
+	for _, device := range ru.Devices {
+		a.Devices = append(a.Devices, Device{Device: device})
+	}
 	a.Save()
 	return nil
 }
@@ -162,6 +176,8 @@ func (a *Account) BindDevice(idpCli pb.IDPPClient) error {
 		// request signature, though has spub, but using user's spub signature this message, dont forget!
 		Sign: []byte("ffff"),
 	}
+	_ = devReq
+	return nil
 }
 
 func (a *Account) Logout() error {
@@ -170,4 +186,34 @@ func (a *Account) Logout() error {
 
 func (a *Account) Save() error {
 	return nil
+}
+
+func (a *Account) Online(client pb.FarmerPublicClient) error {
+	if a.ID == "" {
+		return fmt.Errorf("account id required")
+	}
+
+	onlineReq := &pb.FarmerOnLineReq{FarmerID: a.ID}
+	a.logger.Debugf("login with %+v", a)
+
+	onlineRes, err := client.FarmerOnLine(context.Background(), onlineReq)
+	if err != nil {
+		return err
+	}
+	if onlineRes.Error != nil {
+		a.logger.Errorf("login error: %#v", onlineRes.Error)
+		return onlineRes.Error
+	}
+
+	return nil
+}
+
+func (a *Account) getSignInType() (st pb.SignInType, sv string) {
+	st, sv = pb.SignInType_SI_MOBILE, a.Phone
+	if a.ID != "" {
+		st, sv = pb.SignInType_SI_USERID, a.ID
+	} else if a.Email != "" {
+		st, sv = pb.SignInType_SI_EMAIL, a.Email
+	}
+	return
 }

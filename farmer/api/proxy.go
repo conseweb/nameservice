@@ -22,9 +22,7 @@ func ProxyFabric(rw http.ResponseWriter, req *http.Request, ctx *RequestContext)
 
 	req.URL.Host = daemon.GetRESTAddr()
 	req.URL.Scheme = "http"
-	if API_PREFIX != "" {
-		req.URL.Path = req.URL.Path[len(API_PREFIX):]
-	}
+	req.URL.Path = strings.TrimPrefix(req.URL.Path, API_PREFIX)
 	req.Close = true
 	req.Header.Set("Connection", "close")
 

@@ -15,16 +15,10 @@ import (
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
-	// fpb "github.com/hyperledger/fabric/protos"
-	// "golang.org/x/net/context"
-	// "google/protobuf"
 )
 
 const (
 	DefaultListenAddr = ":9375"
-	DefaultFarmerPath = "/var/run/farmer"
-	// DefaultSocketFile    = DefaultFarmerPath + "/farmer.sock"
-	DefaultPidFile = DefaultFarmerPath + "/farmer.pid"
 
 	// for grpc
 	DefaultSupervisorAddr = ":9376"
@@ -106,8 +100,12 @@ func (d *Daemon) WaitExit() {
 	}
 }
 
+func pidFilePath() string {
+	return viper.GetString("peer.fileSystemPath") + "/farmer.pid"
+}
+
 func (d *Daemon) writePid() error {
-	f, err := os.OpenFile(DefaultPidFile, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0644)
+	f, err := os.OpenFile(pidFilePath(), os.O_CREATE|os.O_EXCL|os.O_RDWR, 0644)
 	if err != nil {
 		return fmt.Errorf("Write Pid File failed, error: %s", err.Error())
 	}
@@ -126,7 +124,7 @@ func (d *Daemon) Exit(err error) {
 		close(d.exitCh)
 	}
 
-	os.RemoveAll(DefaultPidFile)
+	os.RemoveAll(pidFilePath())
 	d.CloseConn()
 
 	time.Sleep(3 * time.Second)

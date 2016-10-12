@@ -2,6 +2,7 @@ package account
 
 import (
 	"net"
+	"runtime"
 	"strings"
 )
 
@@ -38,4 +39,8 @@ SKIP_DEV:
 		}
 	}
 	return ""
+}
+
+func GetLocalOS() string {
+	return runtime.GOOS + "_" + runtime.GOARCH
 }

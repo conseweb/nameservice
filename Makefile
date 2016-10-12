@@ -296,3 +296,9 @@ daemon:
 
 clean-runing-file:
 	rm -rf /var/run/farmer/*
+
+push:
+	rsync -vaz --delete \
+	 --exclude=.git \
+	 $(PWD) root@$(CONTROLLER_SERVER):/root/docker
+ 

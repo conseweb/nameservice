@@ -54,6 +54,8 @@ enum ErrorType {
     ALREADY_RECEIVED_LOTTERY = 15;
     // inappropriate device role
     INAPPROPRIATE_DEVICE_ROLE = 16;
+    // invalid sign in mean invalid email, mobile, userid, password
+    INVALID_SIGN_IN = 17;
 }
 
 message Error {
