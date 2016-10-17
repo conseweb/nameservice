@@ -22,7 +22,6 @@ const (
 
 var (
 	log         *logging.Logger
-	headers     map[string]string
 	daemon      *daepkg.Daemon
 	proxyClient *http.Client
 )
@@ -46,16 +45,6 @@ type eventHandle struct {
 	es map[string]EventClient
 }
 
-func init() {
-	headers = make(map[string]string)
-	headers["Access-Control-Allow-Origin"] = "*"
-	headers["Access-Control-Allow-Methods"] = "GET,PATCH,POST,DELETE,PUT"
-	headers["Access-Control-Allow-Credentials"] = "true"
-	headers["Access-Control-Max-Age"] = "864000"
-	headers["Access-Control-Expose-Headers"] = "Record-Count,Limt,Offset,Content-Type"
-	headers["Access-Control-Allow-Headers"] = "Limt,Offset,Content-Type,Origin,Accept,Authorization"
-}
-
 func notFound(w http.ResponseWriter, req *http.Request) {
 	if strings.HasPrefix(req.URL.Path, API_PREFIX) ||
 		strings.HasPrefix(req.URL.Path, SOCKETIO_PREFIX) {
@@ -71,10 +60,10 @@ func Serve(d *daepkg.Daemon) error {
 	m := NewMartini()
 
 	m.Use(cors.Allow(&cors.Options{
-		AllowOrigins:     strings.Split(headers["Access-Control-Allow-Origin"], ","),
-		AllowMethods:     strings.Split(headers["Access-Control-Allow-Methods"], ","),
-		AllowHeaders:     strings.Split(headers["Access-Control-Allow-Headers"], ","),
-		ExposeHeaders:    strings.Split(headers["Access-Control-Expose-Headers"], ","),
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "PATCH", "POST", "DELETE", "PUT"},
+		AllowHeaders:     []string{"Limt", "Offset", "Content-Type", "Origin", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Record-Count", "Limt", "Offset", "Content-Type"},
 		AllowCredentials: true,
 		MaxAge:           time.Second * 864000,
 	}))

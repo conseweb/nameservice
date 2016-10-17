@@ -10,13 +10,11 @@ func startCmd() *cobra.Command {
 		Use:   "start",
 		Short: "start farmer daemon.",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			logger.Debugf("start farmer daemon.")
 			farmer.StartFarmer()
 			return nil
 		},
 	}
-
-	// flags := cmd.PersistentFlags()
-	// flags.StringVarP(&farmerSupervisorAddr, "supervisorAddr", "a", "", "Supervisor Address")
 
 	return cmd
 }

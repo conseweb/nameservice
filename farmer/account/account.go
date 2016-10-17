@@ -114,7 +114,7 @@ func (a *Account) Registry(idpCli pb.IDPPClient) error {
 	return nil
 }
 
-func (a *Account) Login(idpCli pb.IDPPClient, typ pb.SignInType, signup, password string) error {
+func Login(idpCli pb.IDPPClient, typ pb.SignInType, signup, password string) (a *Account, err error) {
 	req := &pb.LoginUserReq{
 		SignInType: typ,
 		SignIn:     signup,
@@ -124,27 +124,28 @@ func (a *Account) Login(idpCli pb.IDPPClient, typ pb.SignInType, signup, passwor
 
 	resp, err := idpCli.LoginUser(context.Background(), req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if resp.GetError() != nil && resp.GetError().ErrorType != pb.ErrorType_NONE_ERROR {
-		return resp.GetError()
+		return nil, resp.GetError()
 	}
 
 	ru := resp.GetUser()
 	if ru == nil {
-		return fmt.Errorf("got nil user.")
+		return nil, fmt.Errorf("got nil user.")
 	}
-	a.ID = ru.UserID
-	a.Phone = ru.Mobile
-	a.Email = ru.Email
-	a.NickName = ru.Nick
-
-	a.Devices = []Device{}
+	a = &Account{
+		ID:       ru.UserID,
+		Phone:    ru.Mobile,
+		Email:    ru.Email,
+		NickName: ru.Nick,
+		Devices:  []Device{},
+	}
 	for _, device := range ru.Devices {
 		a.Devices = append(a.Devices, Device{Device: device})
 	}
 	a.Save()
-	return nil
+	return a, nil
 }
 
 func (a *Account) BindDevice(idpCli pb.IDPPClient) error {

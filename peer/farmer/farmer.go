@@ -67,10 +67,6 @@ func ParseArgs() error {
 	return nil
 }
 
-func start(args []string) error {
-	return nil
-}
-
 func logout(args []string) error {
 	return nil
 }

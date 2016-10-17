@@ -2,9 +2,9 @@ package daemon
 
 import (
 	"fmt"
-	"github.com/hyperledger/fabric/peer/node"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
@@ -12,6 +12,7 @@ import (
 
 	pb "github.com/conseweb/common/protos"
 	"github.com/hyperledger/fabric/farmer/account"
+	"github.com/hyperledger/fabric/peer/node"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -37,7 +38,7 @@ type Daemon struct {
 	ListenAddr     string
 	RESTURL        string
 
-	farmerAccount *account.Account
+	Account *account.Account
 
 	pid    int
 	exitCh chan error
@@ -101,7 +102,7 @@ func (d *Daemon) WaitExit() {
 }
 
 func pidFilePath() string {
-	return viper.GetString("peer.fileSystemPath") + "/farmer.pid"
+	return filepath.Join(viper.GetString("peer.fileSystemPath"), "farmer.pid")
 }
 
 func (d *Daemon) writePid() error {
@@ -111,7 +112,11 @@ func (d *Daemon) writePid() error {
 	}
 	defer f.Close()
 
-	fmt.Fprintf(f, "%d", os.Getpid())
+	_, err = fmt.Fprintf(f, "%d", os.Getpid())
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -147,7 +152,7 @@ func (d *Daemon) ResetAccount(a *account.Account) {
 	d.Lock()
 	defer d.Unlock()
 	if a != nil {
-		d.farmerAccount = a
+		d.Account = a
 	}
 }
 
@@ -172,6 +177,7 @@ func (d *Daemon) GetRESTAddr() string {
 }
 
 func (d *Daemon) StartPeer() error {
+	d.GetLogger().Debugf("try to start node")
 	return node.Start()
 }
 

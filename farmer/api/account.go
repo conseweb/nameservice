@@ -40,6 +40,24 @@ func (a *accountWrapper) SignUpArgus() (pb.SignUpType, string) {
 	return stype, svalue
 }
 
+func (a *accountWrapper) SignInArgus() (pb.SignInType, string) {
+	stype := pb.SignInType_SI_MOBILE
+	svalue := a.Phone
+
+	switch a.Type {
+	case "phone":
+	case "email":
+		stype = pb.SignInType_SI_EMAIL
+		svalue = a.Email
+	default:
+		if a.Email != "" {
+			stype = pb.SignInType_SI_EMAIL
+			svalue = a.Email
+		}
+	}
+	return stype, svalue
+}
+
 func (a *accountWrapper) ToAccount() (*account.Account, error) {
 	/// TODO: add check
 	return account.NewAccount(a.NickName, a.Phone, a.Email, a.Password, a.Language), nil
@@ -139,6 +157,21 @@ func Registry(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
 func Login(ctx *RequestContext) {
 	var user accountWrapper
 	json.NewDecoder(ctx.req.Body).Decode(&user)
+
+	cli, err := daemon.GetIDPClient()
+	if err != nil {
+		ctx.Error(500, err)
+		return
+	}
+
+	st, su := user.SignInArgus()
+	a, err := account.Login(cli, st, su, user.Password)
+	if err != nil {
+		ctx.Error(500, err)
+		return
+	}
+
+	daemon.ResetAccount(a)
 
 	ctx.res.WriteHeader(200)
 }

@@ -14,7 +14,7 @@ func LoadDaemon() (*Daemon, error) {
 		return std, nil
 	}
 
-	fsPath := viper.GetString("farmer.fileSystemPath")
+	fsPath := viper.GetString("peer.fileSystemPath")
 	// Check farmer root path.
 	_, err := os.Stat(fsPath)
 	if os.IsNotExist(err) {
