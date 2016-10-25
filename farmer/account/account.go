@@ -2,7 +2,10 @@ package account
 
 import (
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/conseweb/common/hdwallet"
@@ -10,8 +13,8 @@ import (
 	"github.com/hyperledger/fabric/core/crypto/primitives"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
-	// "golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/context"
+	// "golang.org/x/crypto/bcrypt"
 	// "google.golang.org/grpc"
 )
 
@@ -66,6 +69,40 @@ func NewAccount(nickname, phone, email, pass, lang string) *Account {
 	}
 }
 
+func LoadFromFile() (*Account, error) {
+	fpath := filepath.Join(viper.GetString("key"), "farmerAccount.json")
+
+	f, err := os.Open(fpath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	a := new(Account)
+	err = json.NewDecoder(f).Decode(a)
+	if err != nil {
+		return nil, err
+	}
+
+	a.logger = logging.MustGetLogger("farmer")
+	return a, nil
+}
+
+func (a *Account) Save() error {
+	fpath := filepath.Join(viper.GetString("key"), "farmerAccount.json")
+	f, err := os.OpenFile(fpath, os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+
+	err = json.NewEncoder(f).Encode(a)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (a *Account) Registry(idpCli pb.IDPPClient) error {
 	priv, err := primitives.NewECDSAKey()
 	if err != nil {
@@ -84,7 +121,7 @@ func (a *Account) Registry(idpCli pb.IDPPClient) error {
 		Pass:       a.Password,
 		UserType:   pb.UserType_NORMAL,
 
-		Wpub: []byte(a.Wallet.Pub().String()),
+		Wpub: a.Wallet.Pub().Serialize(),
 		Spub: pubraw,
 		Sign: []byte("ffff"),
 	}
@@ -110,7 +147,18 @@ func (a *Account) Registry(idpCli pb.IDPPClient) error {
 	}
 	a.ID = ru.UserID
 
-	a.Save()
+	// bind local device.
+	if err := a.BindLocalDevice(idpCli); err != nil {
+		a.logger.Errorf("bind failed, %v", err.Error())
+		return err
+	}
+
+	err = a.Save()
+	if err != nil {
+		a.logger.Errorf("account save local file failed, %v", err.Error())
+		return err
+	}
+
 	return nil
 }
 
@@ -141,14 +189,33 @@ func Login(idpCli pb.IDPPClient, typ pb.SignInType, signup, password string) (a 
 		NickName: ru.Nick,
 		Devices:  []Device{},
 	}
+	exiLocal := false
 	for _, device := range ru.Devices {
-		a.Devices = append(a.Devices, Device{Device: device})
+		if getLocalMAC() == device.Mac {
+			a.Devices = append(a.Devices, Device{Device: device, isLocal: true})
+			exiLocal = true
+		} else {
+			a.Devices = append(a.Devices, Device{Device: device})
+		}
 	}
-	a.Save()
+	if !exiLocal {
+		// try to bind device.
+		if err := a.BindLocalDevice(idpCli); err != nil {
+			a.logger.Errorf("bind failed, %v", err.Error())
+			return a, err
+		}
+	}
+
+	err = a.Save()
+	if err != nil {
+		a.logger.Errorf("account save local file failed, %v", err.Error())
+		return a, err
+	}
+
 	return a, nil
 }
 
-func (a *Account) BindDevice(idpCli pb.IDPPClient) error {
+func (a *Account) BindLocalDevice(idpCli pb.IDPPClient) error {
 	priv, err := primitives.NewECDSAKey()
 	if err != nil {
 		return err
@@ -159,33 +226,32 @@ func (a *Account) BindDevice(idpCli pb.IDPPClient) error {
 		return err
 	}
 
-	wlt, err := a.Wallet.Child(0)
+	dv := a.NewLocalDevice()
+	devReq := &pb.BindDeviceReq{
+		UserID: a.ID,
+		Os:     dv.Os,
+		For:    pb.DeviceFor_FARMER,
+		Mac:    dv.Mac,
+		Alias:  dv.Alias,
+
+		Wpub: []byte(dv.Wpub),
+		// device signature public key
+		Spub: pubraw,
+
+		Sign: []byte("ffff"),
+	}
+
+	resp, err := idpCli.BindDeviceForUser(context.Background(), devReq)
 	if err != nil {
+		a.logger.Errorf("BindDevice failed, %v", err.Error())
 		return err
 	}
 
-	devReq := &pb.BindDeviceReq{
-		UserID: a.ID,
-		Os:     "linux",
-		For:    pb.DeviceFor_FARMER,
-		Mac:    "mac",
-		Alias:  "haha",
-
-		Wpub: []byte(wlt.Pub().String()),
-		// device signature public key
-		Spub: pubraw,
-		// request signature, though has spub, but using user's spub signature this message, dont forget!
-		Sign: []byte("ffff"),
-	}
-	_ = devReq
+	a.Devices = append(a.Devices, Device{Device: resp.Device, Wallet: dv.Wallet, isLocal: true})
 	return nil
 }
 
 func (a *Account) Logout() error {
-	return nil
-}
-
-func (a *Account) Save() error {
 	return nil
 }
 

@@ -205,5 +205,5 @@ func OfflineAccount(ctx *RequestContext) {
 }
 
 func GetAccountState(rw http.ResponseWriter, req *http.Request, rnd render.Render) {
-	rnd.JSON(200, map[string]string{"msg": "hello"})
+	rnd.JSON(200, daemon.Account)
 }

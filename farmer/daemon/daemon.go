@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"os/signal"
@@ -13,6 +14,7 @@ import (
 	pb "github.com/conseweb/common/protos"
 	"github.com/hyperledger/fabric/farmer/account"
 	"github.com/hyperledger/fabric/peer/node"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -37,6 +39,7 @@ type Daemon struct {
 	IDProviderAddr string
 	ListenAddr     string
 	RESTURL        string
+	RootFS         string
 
 	Account *account.Account
 
@@ -48,6 +51,9 @@ type Daemon struct {
 	idproviderConn *grpc.ClientConn
 	svCli          pb.FarmerPublicClient
 	idppCli        pb.IDPPClient
+
+	// used save account info.
+	localDB *sql.DB
 }
 
 func NewDaemon() *Daemon {
@@ -56,9 +62,9 @@ func NewDaemon() *Daemon {
 		IDProviderAddr: DefaultIDProviderAddr,
 		ListenAddr:     DefaultListenAddr,
 		RESTURL:        viper.GetString("rest.address"),
-
-		pid:    os.Getpid(),
-		exitCh: make(chan error),
+		RootFS:         viper.GetString("peer.fileSystemPath"),
+		pid:            os.Getpid(),
+		exitCh:         make(chan error),
 	}
 
 	svAddr := viper.GetString("farmer.supervisorAddress")
@@ -78,13 +84,49 @@ func NewDaemon() *Daemon {
 		d.ListenAddr = listenAddr
 	}
 
+	a, err := account.LoadFromFile()
+	if err != nil {
+		d.GetLogger().Errorf("load account failed", err)
+	}
+	if a != nil {
+		d.Account = a
+	}
+
 	return d
+}
+
+//
+type dbHandler interface {
+	InitDB(db *sql.DB) error
 }
 
 func (d *Daemon) Init() error {
 	if err := d.writePid(); err != nil {
 		return err
 	}
+
+	// db, err := sql.Open("sqlite3", filepath.Join(viper.GetString("peer.fileSystemPath"), "farmerKV.db"))
+	// if err != nil {
+	// 	return err
+	// }
+
+	// if err := db.Ping(); err != nil {
+	// 	return err
+	// }
+
+	// // for init db, e. create tables.
+	// for _, h := range []dbHandler{
+	// 	&account.Account{},
+	// 	&account.Device{},
+	// } {
+	// 	if err := h.InitDB(db); err != nil {
+	// 		logger.Errorf("init db failed, error: %s", err.Error())
+	// 		return err
+	// 	}
+	// }
+
+	// d.localDB = db
+
 	return nil
 }
 

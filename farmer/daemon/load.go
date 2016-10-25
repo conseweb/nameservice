@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -42,6 +43,7 @@ func LoadDaemon() (*Daemon, error) {
 	d := NewDaemon()
 
 	if err := d.Init(); err != nil {
+		log.Errorf("daemon init failed,, %s", err.Error())
 		return nil, err
 	}
 

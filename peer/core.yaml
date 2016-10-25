@@ -93,7 +93,7 @@ daemon:
 farmer:
     id: hello
     supervisorAddress: 0.0.0.0:9376
-    idproviderAddress: 172.17.0.4:7054
+    idproviderAddress: 172.16.1.3:7054
 
 ###############################################################################
 #
@@ -238,7 +238,7 @@ peer:
         touchMaxNodes: 100
 
     # Path on the file system where peer will store data
-    fileSystemPath: /var/hyperledger/production
+    fileSystemPath: /data/hyperledger/
     # rocksdb configurations
     db:
         maxLogFileSize: 10485760

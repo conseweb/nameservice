@@ -5,7 +5,7 @@ import (
 	pb "github.com/conseweb/common/protos"
 )
 
-func NewDevice(a *Account) Device {
+func (a *Account) NewLocalDevice() Device {
 	wlt, _ := a.Wallet.Child(uint32(len(a.Devices)))
 	return Device{
 		Device: &pb.Device{
@@ -15,18 +15,21 @@ func NewDevice(a *Account) Device {
 			For:    pb.DeviceFor_FARMER,
 
 			Alias: GetLocalOS(),
-			// Wpub:   a.Wallet.Child(len(a.Devices)).Serialize(),
-			Spub: []byte(""),
+			Wpub:  wlt.Pub().Serialize(),
+			Spub:  []byte(""),
 		},
-		Wallet: wlt,
+		isLocal: true,
+		Wallet:  wlt,
 	}
 }
 
 type Device struct {
 	*pb.Device
 
-	ID  string
-	Mac string
+	isLocal bool
+	Wallet  *hdwallet.HDWallet
+}
 
-	Wallet *hdwallet.HDWallet
+func (d *Device) IsLocal() bool {
+	return d.Mac == getLocalMAC()
 }

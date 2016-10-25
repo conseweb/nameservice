@@ -74,6 +74,7 @@ IMAGES = base src ccenv peer membersrvc javaenv
 PWD := $(shell pwd)
 IMAGE := ckeyer/obc:dev
 INNER_GOPATH := /opt/gopath
+NET := $(shell docker network inspect cknet > /dev/zero && echo "--net cknet --ip 172.16.1.5" || echo "")
 
 ASSET := HEAD
 DIST_URL := "http://ckeyer:Nzf6tDiWLwEuqW2krQDd@d.cj0.pw/farmer-ui-$(ASSET).tgz"
@@ -278,6 +279,7 @@ dist-clean: clean gotools-clean
 
 dev:
 	docker run --rm \
+	 $(NET) \
 	 -p 9375:9375 \
 	 -p 7050:7050 \
 	 --name dev \
@@ -295,7 +297,7 @@ daemon:
 	./bin/farmer farmer start
 
 clean-runing-file:
-	rm -rf /var/hyperledger/production/*
+	rm -rf /data/hyperledger/
 
 push:
 	rsync -vaz --delete \

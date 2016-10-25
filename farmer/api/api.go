@@ -83,11 +83,11 @@ func Serve(d *daepkg.Daemon) error {
 			r.Post("/:vtype", RegVerificationType)
 			r.Put("/captcha", VerifyCaptcha)
 		})
-		r.Post("/login", Login)
-		r.Delete("/logout", Logout)
 
 		r.Group("/account", func(r martini.Router) {
-			r.Get("/state", GetAccountState)
+			r.Get("", GetAccountState)
+			r.Post("/login", Login)
+			r.Delete("/logout", Logout)
 			r.Patch("/setting", Hello)
 		})
 		r.Group("/device", func(r martini.Router) {
