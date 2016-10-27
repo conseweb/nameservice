@@ -284,6 +284,7 @@ dev:
 	 -p 7050:7050 \
 	 --name dev \
 	 -v $(PWD):$(INNER_GOPATH)/src/$(PKGNAME) \
+	 -v $(GOPATH)/src/github.com/conseweb/common:$(INNER_GOPATH)/src/github.com/conseweb/common \
 	 -w $(INNER_GOPATH)/src/$(PKGNAME) \
 	 -v /var/run/docker.sock:/var/run/docker.sock \
 	 -it $(IMAGE) bash
@@ -299,8 +300,13 @@ daemon:
 clean-runing-file:
 	rm -rf /data/hyperledger/
 
-push:
-	rsync -vaz --delete \
-	 --exclude=.git \
-	 $(PWD) root@$(CONTROLLER_SERVER):/root/docker
+BIN := ./bin/farmer
+CHAINCODE := a4700768debee50f069102d5be41310d3852e29a544ec3cc010d6b0bf577dfa16ffb627677793dce976ec9e9e76d73467672aba8c5c31517a285e2e66b60a547
+deploy:
+	$(BIN) chaincode deploy -p github.com/conseweb/common/assets/lepuscoin -c '{"Function":"deploy", "Args": [ ]}'
+
+invoke:
+	$(BIN) chaincode invoke -n $(CHAINCODE) -c '{"Function":"invoke_coinbase", "Args": [ ]}'
+invoke2:
+	$(BIN) chaincode invoke -n $(CHAINCODE) -c '{"Function":"invoke_transfer", "Args": [ ]}'
  

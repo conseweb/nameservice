@@ -174,7 +174,7 @@ func (d *Daemon) Exit(err error) {
 	os.RemoveAll(pidFilePath())
 	d.CloseConn()
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(1 * time.Second)
 	if err != nil {
 		logger.Errorf("farmer daemon(PID: %d) exit by error: %s", d.pid, err)
 	} else {

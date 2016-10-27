@@ -23,7 +23,7 @@ rest:
     enabled: true
 
     # The address that the REST service will listen on for incoming requests.
-    address: 0.0.0.0:7050
+    address: 172.16.1.5:7050
 
     validPatterns:
 
@@ -63,7 +63,6 @@ logging:
     # Developers: Please see fabric/docs/Setup/logging-control.md for more
     # options.
     peer: warning
-
     node:      info
     network:   warning
     chaincode: warning
@@ -114,9 +113,9 @@ peer:
     networkId: dev
 
     # The Address this Peer will listen on
-    listenAddress: 0.0.0.0:7051
+    listenAddress: 172.16.1.5:7051
     # The Address this Peer will bind to for providing services
-    address: 0.0.0.0:7051
+    address: 172.16.1.5:7051
     # Whether the Peer should programmatically determine the address to bind to.
     # This case is useful for docker containers.
     addressAutoDetect: false
@@ -281,9 +280,11 @@ vm:
         # LogConfig sets the logging driver (Type) and related options (Config) for Docker
         # you can refer https://docs.docker.com/engine/admin/logging/overview/ for more detail configruation.
         hostConfig:
-            NetworkMode: host
+            # you should create docker network before.
+            # `docker network create -d bridge --subnet=172.16.1.0/24 cknet`
+            NetworkMode: cknet
             Dns:
-               # - 192.168.0.1
+               # - 172.16.1.1
             LogConfig:
                 Type: json-file
                 Config:
@@ -312,10 +313,10 @@ chaincode:
         # This is the basis for the Golang Dockerfile.  Additional commands will
         # be appended depedendent upon the chaincode specification.
         Dockerfile:  |
-            from hyperledger/fabric-baseimage
-            #from utxo:0.1.0
-            COPY src $GOPATH/src
-            WORKDIR $GOPATH
+          FROM ckeyer/obc:dev
+          COPY src $GOPATH/src
+          RUN cp -a $GOPATH/src/github.com/hyperledger/fabric/vendor/* $GOPATH/src/
+          WORKDIR $GOPATH
 
     car:
 

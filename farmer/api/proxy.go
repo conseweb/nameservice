@@ -16,6 +16,8 @@ func GetClient() *http.Client {
 }
 
 func ProxyFabric(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+	log.Debug("...")
+	log.Debugf("proxy to %s", req.URL.Path)
 	cli := GetClient()
 
 	req.RequestURI = ""
@@ -28,7 +30,7 @@ func ProxyFabric(rw http.ResponseWriter, req *http.Request, ctx *RequestContext)
 
 	resp, err := cli.Do(req)
 	if err != nil {
-		ctx.Error(resp.StatusCode, err)
+		ctx.Error(400, err)
 		return
 	}
 

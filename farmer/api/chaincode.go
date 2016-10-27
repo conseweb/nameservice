@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
+	// "github.com/hyperledger/fabric/peer/common"
 )
 
 type ChaincodeWrapper struct {
@@ -73,6 +75,7 @@ func (c *ChaincodeWrapper) ToJSONRPC() *JSONRPCWrapper {
 }
 
 func ProxyChaincode(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+	log.Debugf("proxy chaincode to %s", req.URL.Path)
 	cw := &ChaincodeWrapper{}
 	err := json.NewDecoder(req.Body).Decode(cw)
 	if err != nil {
@@ -80,12 +83,23 @@ func ProxyChaincode(rw http.ResponseWriter, req *http.Request, ctx *RequestConte
 		return
 	}
 
-	buf := &bytes.Buffer{}
-	err = json.NewEncoder(buf).Encode(cw.ToJSONRPC())
+	bs, err := json.Marshal(cw.ToJSONRPC())
 	if err != nil {
 		ctx.Error(401, err)
 		return
 	}
 
+	buf := &bytes.Buffer{}
+	n, err := buf.Write(bs)
+	if err != nil {
+		ctx.Error(401, err)
+		return
+	}
+	req.ContentLength = int64(n)
+	req.Header.Set("Content-Length", strconv.Itoa(n))
+	log.Debugf("set new Content-Length %v", n)
+
 	req.Body = ioutil.NopCloser(buf)
+	ctx.mc.Next()
+
 }

@@ -66,10 +66,6 @@ func (tx *TX) TxHash() string {
 	return hex.EncodeToString(lHash[:])
 }
 
-func (r *QueryAddrResult) Bytes() ([]byte, error) {
-	return proto.Marshal(r)
-}
-
 // ParseTXBytes unmarshal txData into TX object
 func ParseTXBytes(txData []byte) (*TX, error) {
 	tx := new(TX)

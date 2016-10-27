@@ -7,11 +7,11 @@ import (
 )
 
 func checkPhone(phone string) bool {
-	return phone == ""
+	return phone != ""
 }
 
 func checkEmail(email string) bool {
-	return email == ""
+	return email != ""
 }
 
 func getLocalMAC() string {

@@ -59,6 +59,7 @@ func LoggingInit(command string) {
 					loggingLogger.Warningf("Logging level '%s' not recognized, defaulting to %s : %s", field, loggingDefaultLevel, err)
 					defaultLevel = loggingDefaultLevel // NB - 'defaultLevel' was overwritten
 				}
+				loggingLogger.Infof("set %s Logging level -> %s", command, field)
 			case 2:
 				// <module>[,<module>...]=<level>
 				if level, err := logging.LogLevel(split[1]); err != nil {

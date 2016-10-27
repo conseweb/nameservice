@@ -172,8 +172,9 @@ func Login(ctx *RequestContext) {
 	}
 
 	daemon.ResetAccount(a)
+	log.Debugf("set nuew account %+v", a)
 
-	ctx.res.WriteHeader(200)
+	ctx.rnd.JSON(200, a)
 }
 
 func Logout(ctx *RequestContext) {

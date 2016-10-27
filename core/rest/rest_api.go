@@ -1179,6 +1179,7 @@ func (s *ServerOpenchainREST) ProcessChaincode(rw web.ResponseWriter, req *web.R
 		restLogger.Error("Internal JSON-RPC error when reading request body.")
 		return
 	}
+	restLogger.Debugf("req body, %s", reqBody)
 
 	// Incoming request body may not be empty, client must supply request payload
 	if string(reqBody) == "" {
@@ -1228,6 +1229,7 @@ func (s *ServerOpenchainREST) ProcessChaincode(rw web.ResponseWriter, req *web.R
 			rw.WriteHeader(http.StatusBadRequest)
 			encoder.Encode(formatRPCResponse(errObj, requestPayload.ID))
 		}
+		restLogger.Debugf("%+v", requestPayload)
 		restLogger.Error("Missing JSON RPC version string.")
 
 		return

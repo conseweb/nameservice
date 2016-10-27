@@ -54,7 +54,7 @@ func notFound(w http.ResponseWriter, req *http.Request) {
 
 func Serve(d *daepkg.Daemon) error {
 	daemon = d
-	log := d.GetLogger()
+	log = d.GetLogger()
 	listenAddr := d.ListenAddr
 
 	m := NewMartini()
@@ -104,8 +104,9 @@ func Serve(d *daepkg.Daemon) error {
 			r.Get("", GetMetrics)
 		})
 
+		r.Any("/chain", ProxyFabric)
 		r.Any("/chain/**", ProxyFabric)
-		r.Any("/chaincode/**", ProxyChaincode, ProxyFabric)
+		r.Any("/chaincode", ProxyChaincode, ProxyFabric)
 		r.Any("/devops/**", ProxyFabric)
 		r.Any("/registrar/**", ProxyFabric)
 		r.Any("/transactions/**", ProxyFabric)
