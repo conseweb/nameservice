@@ -91,8 +91,9 @@ func Serve(d *daepkg.Daemon) error {
 			r.Patch("/setting", Hello)
 		})
 		r.Group("/device", func(r martini.Router) {
-			r.Post("/bind", Hello)
-			r.Delete("/unbind", Hello)
+			r.Post("/_/bind", Hello)
+			r.Delete("/_/unbind", Hello)
+			r.Get("/:addr/coinbase_tx", GetCoinBaseTx)
 		})
 
 		r.Group("/peer", func(r martini.Router) {
@@ -103,10 +104,12 @@ func Serve(d *daepkg.Daemon) error {
 		r.Group("/metrics", func(r martini.Router) {
 			r.Get("", GetMetrics)
 		})
+		r.Group("/chaincode", func(r martini.Router) {
+			r.Post("", ProxyChaincode, ProxyFabric)
+		})
 
 		r.Any("/chain", ProxyFabric)
 		r.Any("/chain/**", ProxyFabric)
-		r.Any("/chaincode", ProxyChaincode, ProxyFabric)
 		r.Any("/devops/**", ProxyFabric)
 		r.Any("/registrar/**", ProxyFabric)
 		r.Any("/transactions/**", ProxyFabric)

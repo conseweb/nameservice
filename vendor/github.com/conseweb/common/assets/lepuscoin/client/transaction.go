@@ -30,9 +30,6 @@ func NewTransactionV1(founder string) *pb.TX {
 	tx.Version = 1
 	tx.Timestamp = time.Now().UTC().Unix()
 	tx.Founder = founder
-	if founder == "" {
-		tx.Coinbase = true
-	}
 	tx.Txin = make([]*pb.TX_TXIN, 0)
 	tx.Txout = make([]*pb.TX_TXOUT, 0)
 
@@ -42,10 +39,11 @@ func NewTransactionV1(founder string) *pb.TX {
 // NewTxIn returns a new transaction input with the provided
 // previous outpoint point and signature script with a default sequence of
 // MaxTxInSequenceNum.
-func NewTxIn(prevHash string, prevIdx uint32) *pb.TX_TXIN {
+func NewTxIn(owner, prevHash string, prevIdx uint32) *pb.TX_TXIN {
 	return &pb.TX_TXIN{
 		SourceHash: prevHash,
 		Ix:         prevIdx,
+		Addr:       owner,
 	}
 }
 
@@ -67,17 +65,12 @@ func VerifyTx(tx *pb.TX) error {
 		return errors.New("tx occur time after now, invalid")
 	}
 
-	// coinbase check
-	if tx.Founder != "" && tx.Coinbase {
-		return errors.New("not coinbase transaction")
+	if tx.Founder == "" {
+		return errors.New("no founder transaction")
 	}
 
 	if tx.Txout == nil || len(tx.Txout) == 0 {
 		return errors.New("transaction output is empty")
-	}
-
-	if !tx.Coinbase && (tx.Txin == nil || len(tx.Txin) == 0) {
-		return errors.New("transaction input is empty")
 	}
 
 	return nil

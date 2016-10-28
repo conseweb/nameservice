@@ -5,10 +5,13 @@ import (
 )
 
 func (ctx *RequestContext) Error(status int, err interface{}, msg ...interface{}) {
-	ctx.rnd.JSON(status, map[string]string{
+	ret := map[string]string{
 		"error": fmt.Sprint(err),
-		"msg":   fmt.Sprint(msg...),
-	})
+	}
+	if len(msg) > 0 {
+		ret["message"] = fmt.Sprint(msg...)
+	}
+	ctx.rnd.JSON(status, ret)
 }
 
 // func (ctx *RequestContext) EventHandle() {

@@ -291,6 +291,10 @@ vm:
                     max-size: "50m"
                     max-file: "5"
             Memory: 2147483648
+            RestartPolicy:
+                Name: "always"
+                MaximumRetryCount: 10
+
 ###############################################################################
 #
 #    Chaincode section

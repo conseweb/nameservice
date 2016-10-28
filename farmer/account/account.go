@@ -94,8 +94,10 @@ func (a *Account) Save() error {
 	fpath := filepath.Join(viper.GetString("peer.fileSystemPath"), "farmerAccount.json")
 	f, err := os.OpenFile(fpath, os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
+	defer f.Close()
 
 	encoder := json.NewEncoder(f)
 	encoder.SetIndent("  ", "")
