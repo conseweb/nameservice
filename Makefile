@@ -289,7 +289,7 @@ dev:
 	 -v /var/run/docker.sock:/var/run/docker.sock \
 	 -it $(IMAGE) bash
 
-local: clean-runing-file local-build daemon
+local: local-build daemon
 
 local-build:
 	go build -o bin/farmer ./peer/main.go
@@ -307,6 +307,7 @@ deploy:
 
 invoke:
 	$(BIN) chaincode invoke -n $(CHAINCODE) -c '{"Function":"invoke_coinbase", "Args": [ ]}'
+
 invoke2:
 	$(BIN) chaincode invoke -n $(CHAINCODE) -c '{"Function":"invoke_transfer", "Args": [ ]}'
  

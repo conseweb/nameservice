@@ -100,7 +100,7 @@ func (a *Account) Save() error {
 	defer f.Close()
 
 	encoder := json.NewEncoder(f)
-	encoder.SetIndent("  ", "")
+	encoder.SetIndent("  ", "  ")
 	err = encoder.Encode(a)
 	if err != nil {
 		return err
@@ -185,7 +185,7 @@ func Login(idpCli pb.IDPPClient, typ pb.SignInType, signup, password string) (a 
 		return nil, err
 	}
 	if resp.GetError() != nil && resp.GetError().ErrorType != pb.ErrorType_NONE_ERROR {
-		logger.Errorf("login failed, %v", err.Error())
+		logger.Errorf("login failed, %v", resp.GetError())
 		return nil, resp.GetError()
 	}
 

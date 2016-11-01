@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-martini/martini"
@@ -24,7 +25,21 @@ var (
 	log         *logging.Logger
 	daemon      *daepkg.Daemon
 	proxyClient *http.Client
+
+	chaincodeManager struct {
+		sync.Mutex
+		ccs map[string]*ChaincodeWrapper
+	}
 )
+
+func init() {
+	chaincodeManager.ccs = map[string]*ChaincodeWrapper{
+		"lepuscoin": &ChaincodeWrapper{
+			Path: "github.com/conseweb/common/assets/lepuscoin",
+			Name: "",
+		},
+	}
+}
 
 type RequestContext struct {
 	params martini.Params
@@ -91,9 +106,10 @@ func Serve(d *daepkg.Daemon) error {
 			r.Patch("/setting", Hello)
 		})
 		r.Group("/device", func(r martini.Router) {
-			r.Post("/_/bind", Hello)
-			r.Delete("/_/unbind", Hello)
-			r.Get("/:addr/coinbase_tx", GetCoinBaseTx)
+			r.Post("/bind", Hello)
+			r.Delete("/unbind", Hello)
+			r.Post("/tx", NewTx)
+			r.Get("/coinbase_tx/:addr", GetCoinBaseTx)
 		})
 
 		r.Group("/peer", func(r martini.Router) {
@@ -105,6 +121,10 @@ func Serve(d *daepkg.Daemon) error {
 			r.Get("", GetMetrics)
 		})
 		r.Group("/chaincode", func(r martini.Router) {
+			r.Get("", ListChaincodes)
+			r.Get("/:alias", GetChaincode)
+			r.Post("/:alias", SetChaincode)
+
 			r.Post("", ProxyChaincode, ProxyFabric)
 		})
 
@@ -153,10 +173,12 @@ func requextCtx(w http.ResponseWriter, req *http.Request, mc martini.Context, rn
 		}
 	}
 
+	log.Debugf("[%s] %s", req.Method, req.URL.String())
+
 	mc.Map(ctx)
 	mc.Next()
 }
 
 func Hello(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
-	ctx.rnd.JSON(200, map[string]string{"msg": "hello"})
+	ctx.rnd.JSON(200, map[string]string{"message": "hello"})
 }

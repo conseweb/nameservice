@@ -38,34 +38,34 @@
 			"revisionTime": "2015-01-14T23:56:00Z"
 		},
 		{
-			"checksumSHA1": "GNvO8mjZXvo6+nSQeRmjnzYjlBg=",
+			"checksumSHA1": "822PMNCMUXNcM2/9EEY7EPH+9bg=",
 			"path": "github.com/conseweb/common/assets/lepuscoin/client",
-			"revision": "5d12c229f4b33bbc8b400c6c305f515522a43d42",
-			"revisionTime": "2016-11-01T03:16:19Z"
+			"revision": "bef38032578bed7766441dae23f053bdf0a28841",
+			"revisionTime": "2016-11-03T01:27:39Z"
 		},
 		{
 			"checksumSHA1": "vfCHJpVvNAIiBSLk6ooQl/2VLF8=",
 			"path": "github.com/conseweb/common/assets/lepuscoin/protos",
-			"revision": "5d12c229f4b33bbc8b400c6c305f515522a43d42",
-			"revisionTime": "2016-11-01T03:16:19Z"
+			"revision": "bef38032578bed7766441dae23f053bdf0a28841",
+			"revisionTime": "2016-11-03T01:27:39Z"
 		},
 		{
 			"checksumSHA1": "cIIMVM13iFdsNg5K2nwFVJRnDqE=",
 			"path": "github.com/conseweb/common/hdwallet",
-			"revision": "5d12c229f4b33bbc8b400c6c305f515522a43d42",
-			"revisionTime": "2016-11-01T03:16:19Z"
+			"revision": "bef38032578bed7766441dae23f053bdf0a28841",
+			"revisionTime": "2016-11-03T01:27:39Z"
 		},
 		{
 			"checksumSHA1": "JXeXHdMq74v1Z5ZKZ3tUO//XRVE=",
 			"path": "github.com/conseweb/common/passphrase",
-			"revision": "5d12c229f4b33bbc8b400c6c305f515522a43d42",
-			"revisionTime": "2016-11-01T03:16:19Z"
+			"revision": "bef38032578bed7766441dae23f053bdf0a28841",
+			"revisionTime": "2016-11-03T01:27:39Z"
 		},
 		{
 			"checksumSHA1": "DlHBf62bcr/33y+STnRBdwh7ePA=",
 			"path": "github.com/conseweb/common/protos",
-			"revision": "5d12c229f4b33bbc8b400c6c305f515522a43d42",
-			"revisionTime": "2016-11-01T03:16:19Z"
+			"revision": "bef38032578bed7766441dae23f053bdf0a28841",
+			"revisionTime": "2016-11-03T01:27:39Z"
 		},
 		{
 			"path": "github.com/cpuguy83/go-md2man/md2man",
