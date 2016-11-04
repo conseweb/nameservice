@@ -213,7 +213,7 @@ func NewTx(rw http.ResponseWriter, req *http.Request, ctx *RequestContext, par m
 	}
 
 	founder := tx.Founder
-	if founder == "" {
+	if len(tx.In) > 0 && founder == "" {
 		// use the first in addr to be founder.
 		founder = tx.In[0].Addr
 	}
