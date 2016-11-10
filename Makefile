@@ -285,7 +285,7 @@ test-indocker:
 	 -v $(PWD):$(INNER_GOPATH)/src/$(PKGNAME) \
 	 -w $(INNER_GOPATH)/src/$(PKGNAME) \
 	 -v /var/run/docker.sock:/var/run/docker.sock \
-	 -it $(IMAGE) make test-local
+	 -i $(IMAGE) make test-local
 
 test-local:
 	go test $$(go list ./...|grep -v "vendor"|grep -v "examples")
