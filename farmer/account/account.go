@@ -87,7 +87,6 @@ func LoadFromFile() (*Account, error) {
 		return nil, err
 	}
 
-	a.logger = logging.MustGetLogger("farmer")
 	return a, nil
 }
 
@@ -128,7 +127,7 @@ func (a *Account) Registry(idpCli pb.IDPPClient) error {
 		Pass:       a.Password,
 		UserType:   pb.UserType_NORMAL,
 
-		Wpub: a.Wallet.Pub().Serialize(),
+		Wpub: []byte(a.Wallet.Pub().String()),
 		Spub: pubraw,
 		Sign: []byte("ffff"),
 	}
@@ -158,16 +157,17 @@ func (a *Account) Registry(idpCli pb.IDPPClient) error {
 
 	// bind local device.
 	if err := a.BindLocalDevice(idpCli); err != nil {
-		a.logger.Errorf("bind failed, %v", err.Error())
+		logger.Errorf("bind failed, %v", err.Error())
 		return err
 	}
+	logger.Debugf("account %+v", a)
 
 	err = a.Save()
 	if err != nil {
-		a.logger.Errorf("account save local file failed, %v", err.Error())
+		logger.Errorf("account save local file failed, %v", err.Error())
 		return err
 	}
-
+	a.Wallet.Address()
 	return nil
 }
 
@@ -202,24 +202,35 @@ func Login(idpCli pb.IDPPClient, typ pb.SignInType, signup, password string) (a 
 	}
 	exiLocal := false
 	for _, device := range ru.Devices {
+		dwlt, err := hdwallet.ParseStringWallet(string(device.Wpub))
+		if err != nil {
+			logger.Errorf("parse devices' wallet failed, %s", err.Error())
+			continue
+		}
+		var addr string
+		if dwlt != nil {
+			addr = dwlt.Address()
+		}
+
 		if getLocalMAC() == device.Mac {
-			a.Devices = append(a.Devices, Device{Device: device, isLocal: true})
+			a.Devices = append(a.Devices, Device{Device: device, IsLocal: true, Address: addr})
 			exiLocal = true
 		} else {
-			a.Devices = append(a.Devices, Device{Device: device})
+			a.Devices = append(a.Devices, Device{Device: device, Address: addr})
 		}
+		logger.Debugf("devices... %#v", a.Devices)
 	}
 	if !exiLocal {
 		// try to bind device.
 		if err := a.BindLocalDevice(idpCli); err != nil {
-			a.logger.Errorf("bind failed, %v", err.Error())
+			logger.Errorf("bind failed, %v", err.Error())
 			return a, err
 		}
 	}
 
 	err = a.Save()
 	if err != nil {
-		a.logger.Errorf("account save local file failed, %v", err.Error())
+		logger.Errorf("account save local file failed, %v", err.Error())
 		return a, err
 	}
 
@@ -254,11 +265,11 @@ func (a *Account) BindLocalDevice(idpCli pb.IDPPClient) error {
 
 	resp, err := idpCli.BindDeviceForUser(context.Background(), devReq)
 	if err != nil {
-		a.logger.Errorf("BindDevice failed, %v", err.Error())
+		logger.Errorf("BindDevice failed, %v", err.Error())
 		return err
 	}
 
-	a.Devices = append(a.Devices, Device{Device: resp.Device, Wallet: dv.Wallet, isLocal: true})
+	a.Devices = append(a.Devices, Device{Device: resp.Device, Wallet: dv.Wallet, IsLocal: true})
 	return nil
 }
 
