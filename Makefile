@@ -287,8 +287,8 @@ test-indocker:
 	 -v /var/run/docker.sock:/var/run/docker.sock \
 	 -i $(IMAGE) make test-local
 
-test-local:
-	go test $$(go list ./...|grep -v "vendor"|grep -v "examples")
+test-local: assets
+	go test $$(go list ./...|grep -v "vendor"|grep -v "examples"|grep -v "java"|grep -v "platforms"|grep -v "chaincode"|grep -v "core/comm")
 
 dev:
 	docker run --rm \
