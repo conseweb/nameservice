@@ -15,19 +15,21 @@ func (a *Account) NewLocalDevice() Device {
 			For:    pb.DeviceFor_FARMER,
 
 			Alias: GetLocalOS(),
-			Wpub:  []byte(wlt.Pub().String()),
-			Spub:  []byte("ffff"),
+			Wpub:  wlt.Pub().Serialize(),
+			Spub:  []byte(""),
 		},
-		IsLocal: true,
+		isLocal: true,
 		Wallet:  wlt,
-		Address: wlt.Pub().Address(),
 	}
 }
 
 type Device struct {
 	*pb.Device
 
-	IsLocal bool `json:"is_local"`
+	isLocal bool
 	Wallet  *hdwallet.HDWallet
-	Address string `json:"address"` // wallet.Address
+}
+
+func (d *Device) IsLocal() bool {
+	return d.Mac == getLocalMAC()
 }

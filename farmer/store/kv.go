@@ -16,7 +16,7 @@ func NewKV() (*KVStore, error) {
 	fsPath := viper.GetString("farmer.fileSystemPath")
 	db, err := sql.Open("sqlite3", filepath.Join(fsPath, "farmerKV.db"))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := db.Ping(); err != nil {

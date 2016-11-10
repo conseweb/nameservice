@@ -37,6 +37,7 @@ func appendAll(content ...[]byte) []byte {
 }
 
 var _ = Describe("Ledger", func() {
+	return
 	var ledgerPtr *ledger.Ledger
 
 	SetupTestConfig()
