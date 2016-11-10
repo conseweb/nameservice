@@ -277,6 +277,19 @@ clean: images-clean $(filter-out gotools-clean, $(SUBDIRS:=-clean))
 dist-clean: clean gotools-clean
 	-@rm -rf /var/hyperledger/* ||:
 
+test: test-indocker
+
+test-indocker:
+	docker run --rm \
+	 --name farmer-testing \
+	 -v $(PWD):$(INNER_GOPATH)/src/$(PKGNAME) \
+	 -w $(INNER_GOPATH)/src/$(PKGNAME) \
+	 -v /var/run/docker.sock:/var/run/docker.sock \
+	 -it $(IMAGE) make test-local
+
+test-local:
+	go test $$(go list ./...|grep -v "vendor"|grep -v "examples")
+
 dev:
 	docker run --rm \
 	 $(NET) \
