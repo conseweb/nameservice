@@ -1,10 +1,13 @@
 package api
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -52,4 +55,33 @@ func ProxyFabric(rw http.ResponseWriter, req *http.Request, ctx *RequestContext)
 	} else {
 		io.Copy(rw, resp.Body)
 	}
+}
+
+func ProxyChaincode(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+	log.Debugf("proxy chaincode to %s", req.URL.Path)
+	cw := &ChaincodeWrapper{}
+	err := json.NewDecoder(req.Body).Decode(cw)
+	if err != nil {
+		ctx.Error(400, err)
+		return
+	}
+
+	bs, err := json.Marshal(cw.ToJSONRPC())
+	if err != nil {
+		ctx.Error(401, err)
+		return
+	}
+
+	buf := &bytes.Buffer{}
+	n, err := buf.Write(bs)
+	if err != nil {
+		ctx.Error(401, err)
+		return
+	}
+	req.ContentLength = int64(n)
+	req.Header.Set("Content-Length", strconv.Itoa(n))
+	log.Debugf("set new Content-Length %v", n)
+
+	req.Body = ioutil.NopCloser(buf)
+	ctx.mc.Next()
 }

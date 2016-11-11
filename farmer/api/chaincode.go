@@ -1,25 +1,33 @@
 package api
 
 import (
-	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
-	"time"
+	"os"
+	"strings"
 
-	"github.com/conseweb/common/assets/lepuscoin/client"
 	"github.com/go-martini/martini"
-	// "github.com/hyperledger/fabric/peer/common"
+	"github.com/hyperledger/fabric/core"
+	"github.com/hyperledger/fabric/peer/common"
+	"github.com/hyperledger/fabric/peer/util"
+	pb "github.com/hyperledger/fabric/protos"
+	"github.com/spf13/viper"
+	"golang.org/x/net/context"
 )
 
 type ChaincodeWrapper struct {
-	Name          string   `json:"name"`
-	Path          string   `json:"path"`
-	Method        string   `json:"method"`
-	Function      string   `json:"function"`
-	Args          []string `json:"args"`
+	Name     string   `json:"name"`
+	Path     string   `json:"path"`
+	Method   string   `json:"method"`
+	Language string   `json:"language"`
+	Function string   `json:"function"`
+	Args     []string `json:"args"`
+
+	UserName      string   `json:"user_name"`
+	Attributes    []string `json:"attributes"`
 	SecureContext string   `json:"secureContext"`
 }
 
@@ -42,6 +50,7 @@ type ParamsWrapper struct {
 	ChaincodeID   map[string]string      `json:"chaincodeID"`
 	CtorMsg       map[string]interface{} `json:"ctorMsg"`
 	SecureContext string                 `json:"secureContext,omitempty"`
+	Attributes    []string               `json:"attributes"`
 }
 
 var (
@@ -65,6 +74,7 @@ func (c *ChaincodeWrapper) ToJSONRPC() *JSONRPCWrapper {
 			CtorMsg: map[string]interface{}{
 				"args": append([]string{c.Function}, c.Args...),
 			},
+			Attributes: c.Attributes,
 		},
 	}
 	if c.Name != "" {
@@ -79,33 +89,171 @@ func (c *ChaincodeWrapper) ToJSONRPC() *JSONRPCWrapper {
 	return cc
 }
 
-func ProxyChaincode(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
-	log.Debugf("proxy chaincode to %s", req.URL.Path)
+func (c *ChaincodeWrapper) ToSpec() (*pb.ChaincodeSpec, error) {
+	input := make([][]byte, len(c.Args))
+	for i, s := range c.Args {
+		input[i] = []byte(s)
+	}
+
+	if c.Language == "" {
+		c.Language = "GOLANG"
+	} else {
+		c.Language = strings.ToUpper(c.Language)
+	}
+
+	spec := &pb.ChaincodeSpec{
+		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[c.Language]),
+		ChaincodeID: &pb.ChaincodeID{
+			Path: c.Path,
+			Name: c.Name,
+		},
+		CtorMsg: &pb.ChaincodeInput{
+			Args: input,
+		},
+		Attributes: c.Attributes,
+	}
+
+	if core.SecurityEnabled() {
+		if c.UserName == common.UndefinedParamValue {
+			return spec, errors.New("Must supply username for chaincode when security is enabled")
+		}
+
+		// Retrieve the CLI data storage path
+		localStore := util.GetCliFilePath()
+
+		// Check if the user is logged in before sending transaction
+		if _, err := os.Stat(localStore + "loginToken_" + c.UserName); err == nil {
+			log.Infof("Local user '%s' is already logged in. Retrieving login token.\n", c.UserName)
+
+			// Read in the login token
+			token, err := ioutil.ReadFile(localStore + "loginToken_" + c.UserName)
+			if err != nil {
+				return nil, fmt.Errorf("Fatal error when reading client login token: %s\n", err)
+			}
+
+			// Add the login token to the chaincodeSpec
+			spec.SecureContext = string(token)
+
+			// If privacy is enabled, mark chaincode as confidential
+			if viper.GetBool("security.privacy") {
+				log.Info("Set confidentiality level to CONFIDENTIAL.\n")
+				spec.ConfidentialityLevel = pb.ConfidentialityLevel_CONFIDENTIAL
+			}
+		} else {
+			// Check if the token is not there and fail
+			if os.IsNotExist(err) {
+				return spec, fmt.Errorf("User '%s' not logged in. Use the 'peer network login' command to obtain a security token.", c.UserName)
+			}
+			// Unexpected error
+			return nil, fmt.Errorf("Fatal error when checking for client login token: %s\n", err)
+		}
+	} else {
+		if c.UserName != common.UndefinedParamValue {
+			log.Warning("Username supplied but security is disabled.")
+		}
+		if viper.GetBool("security.privacy") {
+			return nil, errors.New("Privacy cannot be enabled as requested because security is disabled")
+		}
+	}
+
+	return spec, nil
+}
+
+func (c *ChaincodeWrapper) Deploy() (string, error) {
+	spec, err := c.ToSpec()
+	if err != nil {
+		return "", err
+	}
+
+	devopsClient, err := common.GetDevopsClient(nil)
+	if err != nil {
+		return "", fmt.Errorf("Error building %s: %s", c.Function, err)
+	}
+
+	log.Infof("deploy: %+v", spec)
+	chaincodeDeploymentSpec, err := devopsClient.Deploy(context.Background(), spec)
+	if err != nil {
+		return "", fmt.Errorf("Error building %s: %s\n", c.Function, err)
+	}
+	log.Infof("Deploy result: %s", chaincodeDeploymentSpec.ChaincodeSpec)
+
+	return chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeID.Name, nil
+}
+
+func (c *ChaincodeWrapper) Invoke() ([]byte, error) {
+	spec, err := c.ToSpec()
+	if err != nil {
+		return nil, err
+	}
+
+	devopsClient, err := common.GetDevopsClient(nil)
+	if err != nil {
+		return nil, fmt.Errorf("Error building %s: %s", c.Function, err)
+	}
+
+	log.Infof("deploy: %+v", spec)
+	resp, err := devopsClient.Invoke(context.Background(), &pb.ChaincodeInvocationSpec{ChaincodeSpec: spec})
+	if err != nil {
+		return nil, fmt.Errorf("Error building %s: %s\n", c.Function, err)
+	}
+	log.Infof("Deploy result: %s", resp.Msg)
+
+	return resp.Msg, nil
+}
+
+func (c *ChaincodeWrapper) Query() ([]byte, error) {
+	return c.Invoke()
+}
+
+func DeployCC(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
 	cw := &ChaincodeWrapper{}
-	err := json.NewDecoder(req.Body).Decode(cw)
+	err := json.NewDecoder(ctx.req.Body).Decode(cw)
 	if err != nil {
 		ctx.Error(400, err)
 		return
 	}
 
-	bs, err := json.Marshal(cw.ToJSONRPC())
+	ret, err := cw.Deploy()
 	if err != nil {
-		ctx.Error(401, err)
+		ctx.Error(400, err)
 		return
 	}
 
-	buf := &bytes.Buffer{}
-	n, err := buf.Write(bs)
+	ctx.rnd.JSON(201, map[string]interface{}{"message": ret})
+}
+
+func InvokeCC(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+	cw := &ChaincodeWrapper{}
+	err := json.NewDecoder(ctx.req.Body).Decode(cw)
 	if err != nil {
-		ctx.Error(401, err)
+		ctx.Error(400, err)
 		return
 	}
-	req.ContentLength = int64(n)
-	req.Header.Set("Content-Length", strconv.Itoa(n))
-	log.Debugf("set new Content-Length %v", n)
 
-	req.Body = ioutil.NopCloser(buf)
-	ctx.mc.Next()
+	ret, err := cw.Invoke()
+	if err != nil {
+		ctx.Error(400, err)
+		return
+	}
+
+	ctx.rnd.JSON(200, map[string]interface{}{"message": ret})
+}
+
+func QueryCC(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+	cw := &ChaincodeWrapper{}
+	err := json.NewDecoder(ctx.req.Body).Decode(cw)
+	if err != nil {
+		ctx.Error(400, err)
+		return
+	}
+
+	ret, err := cw.Query()
+	if err != nil {
+		ctx.Error(400, err)
+		return
+	}
+
+	ctx.rnd.JSON(200, map[string]interface{}{"message": ret})
 }
 
 func SetChaincode(rw http.ResponseWriter, req *http.Request, ctx *RequestContext, params martini.Params) {
@@ -138,7 +286,6 @@ func SetChaincode(rw http.ResponseWriter, req *http.Request, ctx *RequestContext
 
 	ctx.rnd.JSON(201, map[string]string{"message": "successful"})
 	return
-
 }
 
 func ListChaincodes(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
@@ -162,101 +309,4 @@ func GetChaincode(rw http.ResponseWriter, req *http.Request, ctx *RequestContext
 		return
 	}
 	ctx.rnd.JSON(200, cc)
-}
-
-// invoke chaincode coinbase
-func GetCoinBaseTx(rw http.ResponseWriter, req *http.Request, ctx *RequestContext, par martini.Params) {
-	addr := par["addr"]
-
-	if addr == "" {
-		ctx.Error(400, fmt.Errorf("invoke coinbase transaction failed, address is nil"))
-		return
-	}
-	cli := client.NewTransactionV1("")
-	cli.AddTxOut(client.NewTxOut(1000000, addr, time.Time{}))
-	bs, err := cli.Base64Bytes()
-	if err != nil {
-		log.Errorf("encode base64 failed, error: %s", err.Error())
-		ctx.Error(400, err)
-		return
-	}
-	log.Debugf("conbase tx: %s", bs)
-	ctx.rnd.JSON(200, map[string]string{"message": string(bs)})
-}
-
-///
-func NewTx(rw http.ResponseWriter, req *http.Request, ctx *RequestContext, par martini.Params) {
-	var tx struct {
-		Founder    string `json:"founder"`
-		ChargeAddr string `json:"charge_addr"`
-		In         []struct {
-			Addr       string `json:"addr"`
-			PreTxHash  string `json:"pre_tx_hash"`
-			TxOutIndex string `json:"tx_out_index"`
-			Balance    uint64 `json:"balance"`
-		} `json:"in"`
-		Out []struct {
-			Addr   string `json:"addr"`
-			Amount uint64 `json:"amount"`
-			Until  int64  `json:"until"`
-		} `json:"out"`
-	}
-	err := json.NewDecoder(req.Body).Decode(&tx)
-	if err != nil {
-		log.Error(err)
-		ctx.Error(400, err)
-		return
-	}
-	if len(tx.Out) == 0 {
-		ctx.Error(400, fmt.Errorf("At least one out_addr is required"))
-		return
-	}
-
-	founder := tx.Founder
-	if len(tx.In) > 0 && founder == "" {
-		// use the first in addr to be founder.
-		founder = tx.In[0].Addr
-	}
-	txCli := client.NewTransactionV1(founder)
-
-	var inAmount, outAmount uint64
-	for _, in := range tx.In {
-		index, err := strconv.Atoi(in.TxOutIndex)
-		if err != nil {
-			ctx.Error(404, err)
-			return
-		}
-		txCli.AddTxIn(client.NewTxIn(in.Addr, in.PreTxHash, uint32(index)))
-		inAmount += in.Balance
-	}
-
-	for _, out := range tx.Out {
-		txCli.AddTxOut(client.NewTxOut(out.Amount, out.Addr, time.Unix(out.Until, 0)))
-		outAmount += out.Amount
-	}
-
-	// not a coinbase transaction
-	if len(tx.In) > 0 {
-		if inAmount < outAmount {
-			log.Debugf("inAmount: %v, outAmount: %v", inAmount, outAmount)
-			ctx.Error(404, fmt.Errorf("Insufficient balance"))
-			return
-		} else if inAmount > outAmount {
-			charge := tx.ChargeAddr
-			if charge == "" {
-				// use the first in addr to be charge address.
-				charge = tx.In[0].Addr
-			}
-			txCli.AddTxOut(client.NewTxOut(inAmount-outAmount, charge, time.Time{}))
-		}
-	}
-
-	bs, err := txCli.Base64Bytes()
-	if err != nil {
-		log.Errorf("encode base64 failed, error: %s", err.Error())
-		ctx.Error(400, err)
-		return
-	}
-	log.Debugf("conbase tx: %s", bs)
-	ctx.rnd.JSON(200, map[string]string{"message": string(bs)})
 }

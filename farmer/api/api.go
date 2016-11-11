@@ -111,6 +111,12 @@ func Serve(d *daepkg.Daemon) error {
 			r.Get("/coinbase_tx/:addr", GetCoinBaseTx)
 		})
 
+		r.Group("/cc", func(r martini.Router) {
+			r.Post("/deploy", DeployCC)
+			r.Post("/invoke", InvokeCC)
+			r.Post("/query", QueryCC)
+		})
+
 		r.Group("/peer", func(r martini.Router) {
 			r.Patch("/start", StartPeer)
 			r.Patch("/stop", StopPeer)
