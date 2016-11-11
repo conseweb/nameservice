@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	ccpkg "github.com/hyperledger/fabric/peer/chaincode"
 )
 
 func GetClient() *http.Client {
@@ -59,7 +61,7 @@ func ProxyFabric(rw http.ResponseWriter, req *http.Request, ctx *RequestContext)
 
 func ProxyChaincode(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
 	log.Debugf("proxy chaincode to %s", req.URL.Path)
-	cw := &ChaincodeWrapper{}
+	cw := &ccpkg.ChaincodeWrapper{}
 	err := json.NewDecoder(req.Body).Decode(cw)
 	if err != nil {
 		ctx.Error(400, err)

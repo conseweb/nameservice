@@ -316,7 +316,7 @@ clean-runing-file:
 BIN := ./bin/farmer
 CHAINCODE := a4700768debee50f069102d5be41310d3852e29a544ec3cc010d6b0bf577dfa16ffb627677793dce976ec9e9e76d73467672aba8c5c31517a285e2e66b60a547
 deploy:
-	$(BIN) chaincode deploy -p github.com/conseweb/common/assets/lepuscoin -c '{"Function":"deploy", "Args": [ ]}'
+	$(BIN) chaincode deploy -p github.com/conseweb/common/assets/lepuscoin -c '{"Function":"deployfunc", "Args": ["aaa"]}'
 
 invoke:
 	$(BIN) chaincode invoke -n $(CHAINCODE) -c '{"Function":"invoke_coinbase", "Args": [ ]}'

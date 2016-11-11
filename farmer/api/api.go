@@ -11,6 +11,7 @@ import (
 	"github.com/go-martini/martini"
 	"github.com/hyperledger/fabric/farmer/api/views"
 	daepkg "github.com/hyperledger/fabric/farmer/daemon"
+	ccpkg "github.com/hyperledger/fabric/peer/chaincode"
 	"github.com/martini-contrib/cors"
 	"github.com/martini-contrib/render"
 	"github.com/op/go-logging"
@@ -28,13 +29,13 @@ var (
 
 	chaincodeManager struct {
 		sync.Mutex
-		ccs map[string]*ChaincodeWrapper
+		ccs map[string]*ccpkg.ChaincodeWrapper
 	}
 )
 
 func init() {
-	chaincodeManager.ccs = map[string]*ChaincodeWrapper{
-		"lepuscoin": &ChaincodeWrapper{
+	chaincodeManager.ccs = map[string]*ccpkg.ChaincodeWrapper{
+		"lepuscoin": &ccpkg.ChaincodeWrapper{
 			Path: "github.com/conseweb/common/assets/lepuscoin",
 			Name: "",
 		},

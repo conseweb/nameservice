@@ -44,10 +44,14 @@ var chaincodeDeployCmd = &cobra.Command{
 // (hash) is printed to STDOUT for use by subsequent chaincode-related CLI
 // commands.
 func chaincodeDeploy(cmd *cobra.Command, args []string) error {
+	fmt.Printf("deploydeploydeploydeploy")
 	spec, err := getChaincodeSpecification(cmd)
+	fmt.Printf("deploydeploydeploydeploy: %+v", spec)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("deploydeploydeploydeploy: %+v", spec)
+	return nil
 
 	devopsClient, err := common.GetDevopsClient(cmd)
 	if err != nil {

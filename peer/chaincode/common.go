@@ -44,11 +44,13 @@ func getChaincodeSpecification(cmd *cobra.Command) (*pb.ChaincodeSpec, error) {
 	if err := json.Unmarshal([]byte(chaincodeCtorJSON), &input); err != nil {
 		return spec, fmt.Errorf("Chaincode argument error: %s", err)
 	}
+	fmt.Printf("input: %+v\n", input.Args)
 
 	var attributes []string
 	if err := json.Unmarshal([]byte(chaincodeAttributesJSON), &attributes); err != nil {
 		return spec, fmt.Errorf("Chaincode argument error: %s", err)
 	}
+	fmt.Printf("attributes: %+v\n", attributes)
 
 	chaincodeLang = strings.ToUpper(chaincodeLang)
 	spec = &pb.ChaincodeSpec{
@@ -57,6 +59,7 @@ func getChaincodeSpecification(cmd *cobra.Command) (*pb.ChaincodeSpec, error) {
 		CtorMsg:     input,
 		Attributes:  attributes,
 	}
+	fmt.Printf("spec: %+v\n", spec)
 	// If security is enabled, add client login token
 	if core.SecurityEnabled() {
 		if chaincodeUsr == common.UndefinedParamValue {
