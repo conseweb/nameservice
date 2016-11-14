@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"testing"
+
+	ccpkg "github.com/hyperledger/fabric/peer/chaincode"
 )
 
 func TestChaincodeWrapper(t *testing.T) {
-	cw := ChaincodeWrapper{
+	cw := ccpkg.ChaincodeWrapper{
 		Name:     "asdf",
 		Method:   "deploy",
 		Function: "init",
