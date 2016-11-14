@@ -14,8 +14,6 @@ import (
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
-	// "golang.org/x/crypto/bcrypt"
-	// "google.golang.org/grpc"
 )
 
 const (
@@ -167,7 +165,7 @@ func (a *Account) Registry(idpCli pb.IDPPClient) error {
 		logger.Errorf("account save local file failed, %v", err.Error())
 		return err
 	}
-	a.Wallet.Address()
+
 	return nil
 }
 
@@ -269,7 +267,7 @@ func (a *Account) BindLocalDevice(idpCli pb.IDPPClient) error {
 		return err
 	}
 
-	a.Devices = append(a.Devices, Device{Device: resp.Device, Wallet: dv.Wallet, IsLocal: true})
+	a.Devices = append(a.Devices, Device{Device: resp.Device, Wallet: dv.Wallet, IsLocal: true, Address: ""})
 	return nil
 }
 
