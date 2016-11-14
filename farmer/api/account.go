@@ -93,36 +93,6 @@ func RegVerificationType(rw http.ResponseWriter, req *http.Request, ctx *Request
 	rw.WriteHeader(200)
 }
 
-// PUT /signup/captcha
-func VerifyCaptcha(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
-	var user accountWrapper
-
-	err := json.NewDecoder(ctx.req.Body).Decode(&user)
-	if err != nil {
-		ctx.Error(400, err)
-		return
-	}
-
-	stype, svalue := user.SignUpArgus()
-
-	cli, err := daemon.GetIDPClient()
-	if err != nil {
-		ctx.Error(500, err)
-		return
-	}
-
-	resp, err := cli.VerifyCaptcha(context.Background(), &pb.VerifyCaptchaReq{stype, svalue, user.Captcha})
-	if err != nil {
-		ctx.Error(501, err, "idp server error")
-		return
-	}
-	if resp.Error != nil && !resp.Error.OK() {
-		ctx.Error(500, resp.Error)
-		return
-	}
-	rw.WriteHeader(200)
-}
-
 // POST /signup
 func Registry(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
 	var user accountWrapper
@@ -136,6 +106,17 @@ func Registry(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
 	cli, err := daemon.GetIDPClient()
 	if err != nil {
 		ctx.Error(500, err)
+		return
+	}
+
+	stype, svalue := user.SignUpArgus()
+	resp, err := cli.VerifyCaptcha(context.Background(), &pb.VerifyCaptchaReq{stype, svalue, user.Captcha})
+	if err != nil {
+		ctx.Error(501, err, "idp server error")
+		return
+	}
+	if resp.Error != nil && !resp.Error.OK() {
+		ctx.Error(400, resp.Error)
 		return
 	}
 

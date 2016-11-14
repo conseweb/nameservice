@@ -94,9 +94,8 @@ func Serve(d *daepkg.Daemon) error {
 	m.Any(SOCKETIO_PREFIX, evt.ServeHTTP)
 	m.Group(API_PREFIX, func(r martini.Router) {
 		r.Group("/signup", func(r martini.Router) {
-			r.Post("", Registry)
 			r.Post("/:vtype", RegVerificationType)
-			r.Put("/captcha", VerifyCaptcha)
+			r.Post("", Registry)
 		})
 
 		r.Group("/account", func(r martini.Router) {
