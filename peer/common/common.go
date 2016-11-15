@@ -22,17 +22,24 @@ import (
 	"github.com/hyperledger/fabric/core/peer"
 	pb "github.com/hyperledger/fabric/protos"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 )
 
 // UndefinedParamValue defines what undefined parameters in the command line will initialise to
 const UndefinedParamValue = ""
 
+var clientConn *grpc.ClientConn
+
 // GetDevopsClient returns a new client connection for this peer
 func GetDevopsClient(cmd *cobra.Command) (pb.DevopsClient, error) {
-	clientConn, err := peer.NewPeerClientConnection()
-	if err != nil {
-		return nil, fmt.Errorf("Error trying to connect to local peer: %s", err)
+	if clientConn == nil {
+		var err error
+		clientConn, err = peer.NewPeerClientConnection()
+		if err != nil {
+			return nil, fmt.Errorf("Error trying to connect to local peer: %s", err)
+		}
 	}
+
 	devopsClient := pb.NewDevopsClient(clientConn)
 	return devopsClient, nil
 }
