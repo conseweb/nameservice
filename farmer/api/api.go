@@ -26,7 +26,7 @@ var (
 	daemon      *daepkg.Daemon
 	proxyClient *http.Client
 
-	ccManager *chaincodeManager
+	ccManager = &chaincodeManager{}
 )
 
 func init() {

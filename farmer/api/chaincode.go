@@ -46,7 +46,7 @@ func (c *chaincodeManager) Get(key string, args ...string) (*ccpkg.ChaincodeWrap
 		newcc.Method = args[0]
 		fallthrough
 	case l >= 2:
-		newcc.Functon = args[1]
+		newcc.Function = args[1]
 		fallthrough
 	case l >= 3:
 		newcc.Args = args[2:]
@@ -134,7 +134,7 @@ func QueryCC(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
 }
 
 func ListChaincodes(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
-	ctx.rnd.JSON(200, chaincodeManager.ccs)
+	ctx.rnd.JSON(200, ccManager.ccs)
 }
 
 func GetChaincode(rw http.ResponseWriter, req *http.Request, ctx *RequestContext, params martini.Params) {

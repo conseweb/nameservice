@@ -31,7 +31,7 @@ type txOut struct {
 	Until  int64  `json:"until"`
 }
 
-func (t *txWrapper) Serialized() ([]byte, error) {
+func (tx *txWrapper) Serialized() ([]byte, error) {
 	if len(tx.Out) == 0 {
 		return nil, fmt.Errorf("At least one out_addr is required")
 	}
