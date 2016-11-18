@@ -189,16 +189,22 @@ func (c *ChaincodeWrapper) Invoke() ([]byte, error) {
 		return nil, fmt.Errorf("Error building %s: %s", c.Function, err)
 	}
 
-	logger.Infof("deploy: %+v", spec)
-	resp, err := devopsClient.Invoke(context.Background(), &pb.ChaincodeInvocationSpec{ChaincodeSpec: spec})
+	logger.Infof("invoke: %+v", spec)
+	var resp *pb.Response
+	if c.Method == "query" {
+		resp, err = devopsClient.Query(context.Background(), &pb.ChaincodeInvocationSpec{ChaincodeSpec: spec})
+	} else {
+		resp, err = devopsClient.Invoke(context.Background(), &pb.ChaincodeInvocationSpec{ChaincodeSpec: spec})
+	}
 	if err != nil {
 		return nil, fmt.Errorf("Error building %s: %s\n", c.Function, err)
 	}
-	logger.Infof("Deploy result: %s", resp.Msg)
+	logger.Infof("Invoke Or query result: %s", resp.Msg)
 
 	return resp.Msg, nil
 }
 
 func (c *ChaincodeWrapper) Query() ([]byte, error) {
+	c.Method = "query"
 	return c.Invoke()
 }

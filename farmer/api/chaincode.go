@@ -31,10 +31,6 @@ func (c *chaincodeManager) Get(key string, args ...string) (*ccpkg.ChaincodeWrap
 		return nil, fmt.Errorf("chaincode %s, %v", key, ErrNotFound)
 	}
 
-	if cc.Name == "" {
-		return cc, ErrNotDeploy
-	}
-
 	var newcc ccpkg.ChaincodeWrapper = *cc
 
 	newcc.Args = []string{}
@@ -51,6 +47,10 @@ func (c *chaincodeManager) Get(key string, args ...string) (*ccpkg.ChaincodeWrap
 	case l >= 3:
 		newcc.Args = args[2:]
 	default:
+	}
+
+	if newcc.Name == "" {
+		return &newcc, ErrNotDeploy
 	}
 	return &newcc, nil
 }

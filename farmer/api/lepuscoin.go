@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/conseweb/common/assets/lepuscoin/client"
+	pb "github.com/conseweb/common/assets/lepuscoin/protos"
 	"github.com/go-martini/martini"
+	ccpkg "github.com/hyperledger/fabric/peer/chaincode"
 )
 
 type txWrapper struct {
@@ -29,6 +32,56 @@ type txOut struct {
 	Addr   string `json:"addr"`
 	Amount uint64 `json:"amount"`
 	Until  int64  `json:"until"`
+}
+
+func queryLepuscoinAddrs(cc *ccpkg.ChaincodeWrapper, addrs ...string) (*pb.QueryAddrResults, error) {
+	if cc == nil || len(addrs) == 0 {
+		return nil, fmt.Errorf("Parameter error")
+	}
+
+	cc.Args = addrs
+
+	ret, err := cc.Query()
+	if err != nil {
+		log.Errorf("query failed, ", err)
+		return nil, err
+	}
+	log.Debugf("query lepuscoin addrs: %s", ret)
+
+	ar := &pb.QueryAddrResults{}
+	err = json.Unmarshal(ret, ar)
+	if err != nil {
+		log.Errorf("decode query'e result failed, body: %s, error:", ret, err)
+		return nil, err
+	}
+
+	return ar, nil
+}
+
+//"{"accounts":{"mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM":
+//{"addr":"mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM","balance":99999990,
+//"txouts":{"f7d9424e5c025e92c029ddc345336e7ec4a72ebbda2b615277e66eb8ec67878e:1":{"value":99999990,"addr":"mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM"}}}}}"
+func getTxIn(cc *ccpkg.ChaincodeWrapper, addrs ...string) ([]txIn, error) {
+	qar, err := queryLepuscoinAddrs(cc, addrs...)
+	if err != nil {
+		log.Errorf("get tx in failed,", err)
+		return nil, err
+	}
+
+	retIns := []txIn{}
+	for _, v := range qar.GetAccounts() {
+		for phi, advl := range v.GetTxouts() {
+			phis := strings.Split(phi, ":")
+			in := txIn{
+				Addr:       advl.Addr,
+				PreTxHash:  phis[0],
+				TxOutIndex: phis[1],
+				Balance:    advl.Value,
+			}
+			retIns = append(retIns, in)
+		}
+	}
+	return retIns, err
 }
 
 func (tx *txWrapper) Serialized() ([]byte, error) {
@@ -118,7 +171,7 @@ func NewTx(rw http.ResponseWriter, req *http.Request, ctx *RequestContext, par m
 
 // POST /lepuscoin/deploy
 func DeployLepuscoin(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
-	lcc, err := ccManager.Get("lepuscoin")
+	lcc, err := ccManager.Get("lepuscoin", "deploy", "deploy")
 	if err == ErrNotDeploy {
 		name, err := lcc.Deploy()
 		if err != nil {
@@ -128,6 +181,7 @@ func DeployLepuscoin(rw http.ResponseWriter, req *http.Request, ctx *RequestCont
 
 		if name != "" {
 			ccManager.SetName("lepuscoin", name)
+			lcc.Name = name // for return frontend
 			log.Debugf("set lepuscoin chaincode name: %s", name)
 		}
 	} else if err != nil {
@@ -184,14 +238,50 @@ func DoCoinbase(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) 
 }
 
 // POST /lepuscoin/transfer
+// body:
+// {
+// 	"in": [{
+// 		"addr": "from xxx..."
+// 		}]
+// 	"out": [{
+// 		"addr": "to addr",
+// 		"amount": 100xxx
+// 		}]
+// }
 func Transfer(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
-	var tx txWrapper
-	err := json.NewDecoder(ctx.req.Body).Decode(&tx)
+	var tranf txWrapper
+	err := json.NewDecoder(ctx.req.Body).Decode(&tranf)
 	if err != nil {
 		ctx.Error(400, err)
 		return
 	}
+	if len(tranf.In) == 0 {
+		ctx.Error(400, fmt.Errorf("At least one in address account is required"))
+		return
+	}
 
+	addrs := make([]string, 0, len(tranf.In))
+	for _, v := range tranf.In {
+		addrs = append(addrs, v.Addr)
+	}
+
+	// get tx's in
+	qAddrCc, err := ccManager.Get("lepuscoin", "query", "query_addrs")
+	if err != nil {
+		ctx.Error(500, err)
+		return
+	}
+	in, err := getTxIn(qAddrCc, addrs...)
+	if err != nil {
+		log.Errorf("got tx in failed, %v", err)
+		ctx.Error(500, err)
+		return
+	}
+
+	tx := &txWrapper{
+		In:  in,
+		Out: tranf.Out,
+	}
 	bs, err := tx.Serialized()
 	if err != nil {
 		log.Errorf("try decode transfer tx failed, %v", err)
@@ -216,7 +306,26 @@ func Transfer(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
 	ctx.Message(200, string(retbs))
 }
 
-// GET /lepuscoin/addrs?addrs=[....]
+// GET /lepuscoin/balance?addrs=[....]
 func QueryAddrs(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+	param := ctx.params["addrs"]
+	if len(param) == 0 {
+		ctx.Error(400, "need addrs")
+		return
+	}
+	addrs := strings.Split(param, ",")
 
+	qAddrCc, err := ccManager.Get("lepuscoin", "query", "query_addrs")
+	if err != nil {
+		ctx.Error(500, err)
+		return
+	}
+	ret, err := queryLepuscoinAddrs(qAddrCc, addrs...)
+	if err != nil {
+		log.Errorf("got tx in failed, %v", err)
+		ctx.Error(500, err)
+		return
+	}
+
+	ctx.rnd.JSON(200, ret)
 }

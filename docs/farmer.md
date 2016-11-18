@@ -155,3 +155,73 @@ return:
 
 ### 启动/停止
 PATCH `/peer/{start|stop|restart}`
+
+## Lepuscoin
+### 部署
+POST `/lepuscoin/deploy`
+
+### coinbase 交易
+POST `/lepuscoin/coinbase`
+
+### 交易
+POST `/lepuscoin/transfer`
+
+body:
+```
+{
+	"in": [{
+		"addr": "from xxx..."
+		}]
+	"out": [{
+		"addr": "to addr",
+		"amount": 100xxx
+		}]
+}
+```
+
+### 查询
+GET `/lepuscoin/balance?addrs=xxx,yyy`
+
+return:
+```
+{
+	"accounts": {
+		"kjlk": {
+			"addr": "kjlk",
+			"balance": 115,
+			"txouts": {
+				"409d982b816c7640fa5cf98abe48813fa74b9ad0d299d30f14ab69c891486f98:0": {
+					"value": 5,
+					"addr": "kjlk"
+				},
+				"4590c4b5b3c5a1fbfb0c955f02e609efcb95054b924dbd34139e5a0ce21e6abe:0": {
+					"value": 5,
+					"addr": "kjlk"
+				},
+				"560e059881483bf967a9c63f506e2ea7f5bc0e855c57f612d1eccc02a9b85d8b:0": {
+					"value": 5,
+					"addr": "kjlk"
+				},
+				"728ff33734e5dfcabc3163b37175f663ed2b2ea624b237a5df96bc5c8347383f:0": {
+					"value": 50,
+					"addr": "kjlk"
+				},
+				"8af9bc2f92732908d569c604dc6b0fac7679fa4e805f81d58a16e6f58d17a4f3:0": {
+					"value": 50,
+					"addr": "kjlk"
+				}
+			}
+		},
+		"mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM": {
+			"addr": "mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM",
+			"balance": 99999875,
+			"txouts": {
+				"728ff33734e5dfcabc3163b37175f663ed2b2ea624b237a5df96bc5c8347383f:1": {
+					"value": 99999875,
+					"addr": "mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM"
+				}
+			}
+		}
+	}
+}
+```
