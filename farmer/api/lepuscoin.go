@@ -306,8 +306,9 @@ func Transfer(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
 	ctx.Message(200, string(retbs))
 }
 
-// GET /lepuscoin/balance?addrs=[....]
+// GET /lepuscoin/balance?addrs=[....]&format=false
 func QueryAddrs(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+	format, _ := strconv.ParseBool(ctx.params["format"])
 	param := ctx.params["addrs"]
 	if len(param) == 0 {
 		ctx.Error(400, "need addrs")
@@ -320,7 +321,13 @@ func QueryAddrs(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) 
 		ctx.Error(500, err)
 		return
 	}
-	ret, err := queryLepuscoinAddrs(qAddrCc, addrs...)
+
+	var ret interface{}
+	if format {
+		ret, err = getTxIn(qAddrCc, addrs...)
+	} else {
+		ret, err = queryLepuscoinAddrs(qAddrCc, addrs...)
+	}
 	if err != nil {
 		log.Errorf("got tx in failed, %v", err)
 		ctx.Error(500, err)
