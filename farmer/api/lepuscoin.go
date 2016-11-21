@@ -354,10 +354,10 @@ func QueryCoin(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
 	ctx.rnd.JSON(200, ret)
 }
 
-// GET /lepuscoin/tx?tx=xxx&depth=1
-func QueryTx(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+// GET /lepuscoin/tx/:tx?depth=1
+func QueryTx(rw http.ResponseWriter, req *http.Request, ctx *RequestContext, params martini.Params) {
 	// source hash
-	sHash := ctx.params["tx"]
+	sHash := params["tx"]
 	if sHash == "" {
 		ctx.Error(400, fmt.Errorf("invalide tx"))
 		return
