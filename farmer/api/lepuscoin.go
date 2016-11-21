@@ -336,3 +336,74 @@ func QueryAddrs(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) 
 
 	ctx.rnd.JSON(200, ret)
 }
+
+// GET /lepuscoin/coin
+func QueryCoin(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+	cc, err := ccManager.Get("lepuscoin", "query", "query_coin")
+	if err != nil {
+		ctx.Error(500, err)
+		return
+	}
+
+	ret, err := cc.Query()
+	if err != nil {
+		ctx.Error(500, err)
+		return
+	}
+
+	ctx.rnd.JSON(200, ret)
+}
+
+// GET /lepuscoin/tx?tx=xxx&depth=1
+func QueryTx(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+	// source hash
+	sHash := ctx.params["tx"]
+	if sHash == "" {
+		ctx.Error(400, fmt.Errorf("invalide tx"))
+		return
+	}
+
+	var depth int
+	var err error
+	if ctx.params["depth"] != "" {
+		depth, err = strconv.Atoi(ctx.params["depth"])
+		if err != nil {
+			ctx.Error(400, fmt.Errorf("invalide depth: %s, %s", ctx.params["depth"], err))
+			return
+		}
+	}
+	if depth < 1 || depth > 20 {
+		depth = 5 // default depth 5
+	}
+
+	cc, err := ccManager.Get("lepuscoin", "query")
+	if err != nil {
+		ctx.Error(500, err)
+		return
+	}
+
+	txs := []*pb.TX{}
+	for ; depth > 0; depth-- {
+		cc.Args = []string{sHash}
+		ret, err := cc.Query("query_tx", sHash)
+		if err != nil {
+			ctx.Error(500, err)
+			return
+		}
+
+		t := &pb.TX{}
+		err = json.Unmarshal(ret, t)
+		if err != nil {
+			ctx.Error(500, fmt.Errorf("decode tx failed, %s", err))
+			return
+		}
+
+		txs = append(txs, t)
+		if len(t.Txin) == 0 {
+			break
+		}
+		sHash = t.Txin[0].SourceHash
+	}
+
+	ctx.rnd.JSON(200, txs)
+}

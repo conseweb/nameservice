@@ -267,3 +267,53 @@ GET `/lepuscoin/balance?addrs=xxx,yyy&format=false`
 	}
 ]
 ```
+
+GET `/lepuscoin/tx?tx=xxx&depth=2`
+```
+[
+{
+	version: 1,
+	timestamp: 1479451195,
+	txin: [
+		{
+			ix: 1,
+			sourceHash: "8af9bc2f92732908d569c604dc6b0fac7679fa4e805f81d58a16e6f58d17a4f3",
+			addr: "mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM"
+		}
+	],
+	txout: [
+		{
+			value: 50,
+			addr: "kjlk"
+		},
+		{
+			value: 99999875,
+			addr: "mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM"
+		}
+	],
+	founder: "mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM"
+},
+{
+	version: 1,
+	timestamp: 1479450864,
+	txin: [
+		{
+		ix: 1,
+		sourceHash: "4590c4b5b3c5a1fbfb0c955f02e609efcb95054b924dbd34139e5a0ce21e6abe",
+		addr: "mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM"
+		}
+	],
+	txout: [
+		{
+			value: 50,
+			addr: "kjlk"
+		},
+		{
+			value: 99999925,
+			addr: "mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM"
+		}
+	],
+	founder: "mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM"
+}
+]
+```

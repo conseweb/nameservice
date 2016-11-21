@@ -37,16 +37,16 @@ func (c *chaincodeManager) Get(key string, args ...string) (*ccpkg.ChaincodeWrap
 	newcc.Attributes = []string{}
 
 	l := len(args)
-	switch {
-	case l >= 1:
+	log.Debugf("args %+v, length: %v", args, l)
+
+	if l >= 1 {
 		newcc.Method = args[0]
-		fallthrough
-	case l >= 2:
+	}
+	if l >= 2 {
 		newcc.Function = args[1]
-		fallthrough
-	case l >= 3:
+	}
+	if l >= 3 {
 		newcc.Args = args[2:]
-	default:
 	}
 
 	if newcc.Name == "" {
