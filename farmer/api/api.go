@@ -115,7 +115,7 @@ func Serve(d *daepkg.Daemon) error {
 			r.Post("/transfer", Transfer)
 			r.Get("/balance", QueryAddrs)
 			r.Get("/coin", QueryCoin)
-			r.Get("/tx", QueryTx)
+			r.Get("/tx/:tx", QueryTx)
 		})
 
 		r.Group("/cc", func(r martini.Router) {

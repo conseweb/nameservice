@@ -268,7 +268,7 @@ GET `/lepuscoin/balance?addrs=xxx,yyy&format=false`
 ]
 ```
 
-GET `/lepuscoin/tx?tx=xxx&depth=2`
+GET `/lepuscoin/tx/:tx?depth=2`
 ```
 [
 {
