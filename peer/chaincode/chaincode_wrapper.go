@@ -204,7 +204,16 @@ func (c *ChaincodeWrapper) Invoke() ([]byte, error) {
 	return resp.Msg, nil
 }
 
-func (c *ChaincodeWrapper) Query() ([]byte, error) {
+func (c *ChaincodeWrapper) Query(params ...string) ([]byte, error) {
 	c.Method = "query"
+
+	l := len(params)
+	if l >= 1 {
+		c.Function = params[0]
+	}
+	if l >= 2 {
+		c.Args = params[1:]
+	}
+
 	return c.Invoke()
 }
