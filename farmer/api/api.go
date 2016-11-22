@@ -106,13 +106,16 @@ func Serve(d *daepkg.Daemon) error {
 			r.Post("/device/tx", NewTx)
 			r.Get("/device/coinbase_tx/:addr", GetCoinBaseTx)
 
-			r.Post("/lepuscoin/tx", NewTx)
-			r.Post("/lepuscoin/deploy", DeployLepuscoin)
-			r.Post("/lepuscoin/coinbase", DoCoinbase)
-			r.Post("/lepuscoin/transfer", Transfer)
-			r.Get("/lepuscoin/balance", QueryAddrs)
-			r.Get("/lepuscoin/coin", QueryCoin)
-			r.Get("/lepuscoin/tx/:tx", QueryTx)
+			/// need deploy lepuscoin chaincode.
+			r.Group("/lepuscoin", func(r martini.Router) {
+				r.Post("/tx", NewTx)
+				r.Post("/deploy", DeployLepuscoin)
+				r.Post("/coinbase", DoCoinbase)
+				r.Post("/transfer", Transfer)
+				r.Get("/balance", QueryAddrs)
+				r.Get("/coin", QueryCoin)
+				r.Get("/tx/:tx", QueryTx)
+			}, DeployLepuscoinMW)
 		}, AuthMW)
 
 		r.Post("/cc/deploy", DeployCC)
