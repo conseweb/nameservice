@@ -68,6 +68,7 @@ func getTxIn(cc *ccpkg.ChaincodeWrapper, addrs ...string) ([]txIn, error) {
 		return nil, err
 	}
 
+	log.Debugf("get tx: %+v", qar)
 	retIns := []txIn{}
 	for _, v := range qar.GetAccounts() {
 		for phi, advl := range v.GetTxouts() {
@@ -81,6 +82,7 @@ func getTxIn(cc *ccpkg.ChaincodeWrapper, addrs ...string) ([]txIn, error) {
 			retIns = append(retIns, in)
 		}
 	}
+	log.Debugf("get txs: %+v", retIns)
 	return retIns, err
 }
 
@@ -334,6 +336,7 @@ func QueryAddrs(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) 
 		return
 	}
 
+	log.Debugf("query balance, ret: %+v", ret)
 	ctx.rnd.JSON(200, ret)
 }
 

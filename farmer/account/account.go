@@ -272,7 +272,8 @@ func (a *Account) BindLocalDevice(idpCli pb.IDPPClient) error {
 }
 
 func (a *Account) Logout() error {
-	return nil
+	a = &Account{}
+	return a.Save()
 }
 
 func (a *Account) Online(client pb.FarmerPublicClient) error {
