@@ -176,9 +176,35 @@ func (d *Daemon) GetLogger() *logging.Logger {
 func (d *Daemon) ResetAccount(a *account.Account) {
 	d.Lock()
 	defer d.Unlock()
-	if a != nil {
-		d.Account = a
+	if a == nil {
+		err := d.Account.Logout()
+		if err != nil {
+			logger.Errorf("user logout failed", err)
+		}
+		return
 	}
+	d.Account = a
+}
+
+func (d *Daemon) GetUser() *account.Account {
+	if d.Account != nil && d.Account.ID != "" {
+		return d.Account
+	}
+
+	return nil
+}
+
+func (d *Daemon) IsLogin() bool {
+	u := d.GetUser()
+	if u == nil {
+		return false
+	}
+
+	if u.Email == "" && u.Phone == "" {
+		return false
+	}
+
+	return true
 }
 
 func (d *Daemon) GetRESTAddr() string {

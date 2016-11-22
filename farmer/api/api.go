@@ -90,54 +90,46 @@ func Serve(d *daepkg.Daemon) error {
 
 	m.Any(SOCKETIO_PREFIX, evt.ServeHTTP)
 	m.Group(API_PREFIX, func(r martini.Router) {
-		r.Group("/signup", func(r martini.Router) {
-			r.Post("/:vtype", RegVerificationType)
-			r.Post("", Registry)
-		})
+		/// no auth
+		r.Post("/signup/:vtype", RegVerificationType)
+		r.Post("/signup", Registry)
+		r.Post("/account/login", Login)
 
-		r.Group("/account", func(r martini.Router) {
-			r.Get("", GetAccountState)
-			r.Post("/login", Login)
-			r.Delete("/logout", Logout)
-			r.Patch("/setting", Hello)
-		})
-		r.Group("/device", func(r martini.Router) {
-			r.Post("/bind", Hello)
-			r.Delete("/unbind", Hello)
-			r.Post("/tx", NewTx)
-			r.Get("/coinbase_tx/:addr", GetCoinBaseTx)
-		})
+		/// need user auth
+		r.Group("", func(r martini.Router) {
+			r.Get("/account", GetAccountState)
+			r.Delete("/account/logout", Logout)
+			r.Patch("/account/setting", Hello)
 
-		r.Group("/lepuscoin", func(r martini.Router) {
-			r.Post("/tx", NewTx)
-			r.Post("/deploy", DeployLepuscoin)
-			r.Post("/coinbase", DoCoinbase)
-			r.Post("/transfer", Transfer)
-			r.Get("/balance", QueryAddrs)
-			r.Get("/coin", QueryCoin)
-			r.Get("/tx/:tx", QueryTx)
-		})
+			r.Post("/device/bind", Hello)
+			r.Delete("/device/unbind", Hello)
+			r.Post("/device/tx", NewTx)
+			r.Get("/device/coinbase_tx/:addr", GetCoinBaseTx)
 
-		r.Group("/cc", func(r martini.Router) {
-			r.Post("/deploy", DeployCC)
-			r.Post("/invoke", InvokeCC)
-			r.Post("/query", QueryCC)
-		})
+			r.Post("/lepuscoin/tx", NewTx)
+			r.Post("/lepuscoin/deploy", DeployLepuscoin)
+			r.Post("/lepuscoin/coinbase", DoCoinbase)
+			r.Post("/lepuscoin/transfer", Transfer)
+			r.Get("/lepuscoin/balance", QueryAddrs)
+			r.Get("/lepuscoin/coin", QueryCoin)
+			r.Get("/lepuscoin/tx/:tx", QueryTx)
+		}, AuthMW)
 
-		r.Group("/peer", func(r martini.Router) {
-			r.Patch("/start", StartPeer)
-			r.Patch("/stop", StopPeer)
-			r.Patch("/restart", RestartPeer)
-		})
-		r.Group("/metrics", func(r martini.Router) {
-			r.Get("", GetMetrics)
-		})
-		r.Group("/chaincode", func(r martini.Router) {
-			r.Get("", ListChaincodes)
-			r.Get("/:alias", GetChaincode)
+		r.Post("/cc/deploy", DeployCC)
+		r.Post("/cc/invoke", InvokeCC)
+		r.Post("/cc/query", QueryCC)
 
-			r.Post("", ProxyChaincode, ProxyFabric)
-		})
+		r.Patch("/peer/start", StartPeer)
+		r.Patch("/peer/stop", StopPeer)
+		r.Patch("/peer/restart", RestartPeer)
+
+		r.Get("/metrics", GetMetrics)
+
+		r.Get("/chaincode", ListChaincodes)
+		r.Get("/chaincode/:alias", GetChaincode)
+
+		/// proxy fo fabirc
+		r.Post("/chaincode", ProxyChaincode, ProxyFabric)
 
 		r.Any("/chain", ProxyFabric)
 		r.Any("/chain/**", ProxyFabric)

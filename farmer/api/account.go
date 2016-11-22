@@ -159,7 +159,7 @@ func Login(ctx *RequestContext) {
 }
 
 func Logout(ctx *RequestContext) {
-
+	daemon.ResetAccount(nil)
 	ctx.res.WriteHeader(200)
 }
 
@@ -192,4 +192,12 @@ func GetAccountState(rw http.ResponseWriter, req *http.Request, ctx *RequestCont
 		return
 	}
 	rnd.JSON(200, daemon.Account)
+}
+
+// need user login
+func AuthMW(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+	if !daemon.IsLogin() {
+		ctx.Message(401, "login required.")
+		return
+	}
 }
