@@ -291,7 +291,8 @@ GET `/lepuscoin/tx/:tx?depth=2`
 			addr: "mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM"
 		}
 	],
-	founder: "mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM"
+	founder: "mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM",
+	hash: "xxxx...."
 },
 {
 	version: 1,
@@ -313,7 +314,8 @@ GET `/lepuscoin/tx/:tx?depth=2`
 			addr: "mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM"
 		}
 	],
-	founder: "mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM"
+	founder: "mtCLPxw18uxFMK1tbWLCVxJa4Tby7My7aM",
+	hash: "xxxx...."
 }
 ]
 ```
