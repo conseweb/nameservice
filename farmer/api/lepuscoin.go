@@ -14,7 +14,16 @@ import (
 	ccpkg "github.com/hyperledger/fabric/peer/chaincode"
 )
 
+// for query
+type pbTxWrapper struct {
+	*pb.TX `json:",inline"`
+	Hash   string `json:"hash"`
+}
+
+// for transfer
 type txWrapper struct {
+	Hash       string  `json:"id"` // is tx hash
+	Timestamp  int64   `json:"timestamp"`
 	Founder    string  `json:"founder"`
 	ChargeAddr string  `json:"charge_addr"`
 	In         []txIn  `json:"in"`
@@ -407,28 +416,60 @@ func QueryTx(rw http.ResponseWriter, req *http.Request, ctx *RequestContext, par
 		return
 	}
 
-	txs := []*pb.TX{}
-	for ; depth > 0; depth-- {
-		cc.Args = []string{sHash}
-		ret, err := cc.Query("query_tx", sHash)
-		if err != nil {
-			ctx.Error(500, err)
-			return
-		}
-
-		t := &pb.TX{}
-		err = json.Unmarshal(ret, t)
-		if err != nil {
-			ctx.Error(500, fmt.Errorf("decode tx failed, %s", err))
-			return
-		}
-
-		txs = append(txs, t)
-		if len(t.Txin) == 0 {
-			break
-		}
-		sHash = t.Txin[0].SourceHash
+	txs, err := GetTxList(cc, nil, sHash, depth)
+	if err != nil {
+		log.Errorf("Get tx list failed, %v", err)
+		ctx.Error(500, err)
+		return
 	}
 
 	ctx.rnd.JSON(200, txs)
+}
+
+func GetTxList(cc *ccpkg.ChaincodeWrapper, existsHash map[string]struct{}, hash string, depth int) ([]*pbTxWrapper, error) {
+	if cc == nil {
+		var err error
+		cc, err = ccManager.Get("lepuscoin", "query")
+		if err != nil {
+			return nil, err
+		}
+	}
+	if existsHash == nil {
+		existsHash = map[string]struct{}{"": struct{}{}}
+	}
+
+	if depth == 0 {
+		return []*pbTxWrapper{}, nil
+	}
+
+	ret, err := cc.Query("query_tx", hash)
+	if err != nil {
+		log.Errorf("query tx failed, hash: %s, depth: %v, %v", hash, depth, err)
+		return nil, err
+	}
+
+	t := &pb.TX{}
+	err = json.Unmarshal(ret, t)
+	if err != nil {
+		return nil, err
+	}
+
+	existsHash[t.TxHash()] = struct{}{}
+
+	log.Debugf("query tx, hash: %s, depth: %v, %+v", hash, depth, t)
+	if depth == 1 {
+		return []*pbTxWrapper{&pbTxWrapper{t, t.TxHash()}}, nil
+	}
+
+	txs := []*pbTxWrapper{}
+	for _, in := range t.GetTxin() {
+		if _, ok := existsHash[in.SourceHash]; !ok {
+			txlist, err := GetTxList(cc, existsHash, in.SourceHash, depth-1)
+			if err != nil {
+				return nil, err
+			}
+			txs = append(txs, txlist...)
+		}
+	}
+	return append(txs, &pbTxWrapper{t, t.TxHash()}), nil
 }
