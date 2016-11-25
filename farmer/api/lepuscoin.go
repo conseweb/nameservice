@@ -140,28 +140,6 @@ func (tx *txWrapper) Serialized() ([]byte, error) {
 	return txCli.Base64Bytes()
 }
 
-func DeployLepuscoinMW(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
-	lcc, err := ccManager.Get("lepuscoin", "deploy", "deploy")
-	if err == ErrNotDeploy {
-		name, err := lcc.Deploy()
-		if err != nil {
-			ctx.Error(500, err)
-			return
-		}
-
-		if name != "" {
-			ccManager.SetName("lepuscoin", name)
-			lcc.Name = name // for return frontend
-			log.Debugf("set lepuscoin chaincode name: %s", name)
-		}
-		ctx.Error(501, fmt.Errorf("lepuscoin chaincode is deploying, please wait."))
-		return
-	} else if err != nil {
-		ctx.Error(400, err)
-		return
-	}
-}
-
 // invoke chaincode coinbase
 func GetCoinBaseTx(rw http.ResponseWriter, req *http.Request, ctx *RequestContext, par martini.Params) {
 	addr := par["addr"]

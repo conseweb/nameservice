@@ -110,6 +110,34 @@ func (d *Daemon) Init() error {
 		d.Account = a
 	}
 
+	db, err := sql.Open("sqlite3", filepath.Join(viper.GetString("peer.fileSystemPath"), "farmer.db"))
+	if err != nil {
+		return err
+	}
+
+	if err := db.Ping(); err != nil {
+		return err
+	}
+
+	// for init db, e. create tables.
+	for _, h := range []dbHandler{
+		&account.Contact{},
+	} {
+		if err := h.InitDB(db); err != nil {
+			logger.Errorf("init db failed, error: %s", err.Error())
+			return err
+		}
+	}
+
+	d.localDB = db
+
+	return nil
+}
+
+func (d *Daemon) GetDB() *sql.DB {
+	if d.localDB != nil {
+		return d.localDB
+	}
 	return nil
 }
 
