@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	stdlog "log"
 	"net/http"
 	"os"
@@ -46,6 +47,7 @@ type RequestContext struct {
 	rnd render.Render
 	res http.ResponseWriter
 
+	db  *sql.DB
 	evt *EventHandler
 }
 
@@ -100,6 +102,13 @@ func Serve(d *daepkg.Daemon) error {
 			r.Get("/account", GetAccountState)
 			r.Delete("/account/logout", Logout)
 			r.Patch("/account/setting", Hello)
+
+			// local contacts
+			r.Get("/account/contacts", ListContacts)
+			r.Post("/account/contacts", AddContacts)
+			r.Patch("/account/contacts/:id", UpdateContacts)
+			r.Delete("/account/contacts", RemoveAllContacts)
+			r.Delete("/account/contacts/:id", RemoveContacts)
 
 			r.Post("/device/bind", Hello)
 			r.Delete("/device/unbind", Hello)
@@ -169,6 +178,7 @@ func requextCtx(w http.ResponseWriter, req *http.Request, mc martini.Context, rn
 		mc:     mc,
 		rnd:    rnd,
 		evt:    evt,
+		db:     daemon.GetDB(),
 		params: make(map[string]string),
 	}
 

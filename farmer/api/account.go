@@ -2,7 +2,9 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	pb "github.com/conseweb/common/protos"
 	"github.com/go-martini/martini"
@@ -194,10 +196,75 @@ func GetAccountState(rw http.ResponseWriter, req *http.Request, ctx *RequestCont
 	rnd.JSON(200, daemon.Account)
 }
 
-// need user login
-func AuthMW(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
-	if !daemon.IsLogin() {
-		ctx.Message(401, "login required.")
+// contacts.
+func ListContacts(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+	ret, err := (*account.Contact).List(nil, ctx.db)
+	if err != nil {
+		ctx.Error(500, err)
 		return
 	}
+	ctx.rnd.JSON(200, ret)
+}
+
+func AddContacts(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+	cont := &account.Contact{}
+	err := json.NewDecoder(ctx.req.Body).Decode(cont)
+	if err != nil {
+		ctx.Error(400, fmt.Errorf("invalied data, %s", err))
+		return
+	}
+
+	if err = cont.Insert(ctx.db); err != nil {
+		ctx.Error(500, err)
+		return
+	}
+	ctx.rnd.JSON(201, cont)
+}
+
+func UpdateContacts(rw http.ResponseWriter, req *http.Request, ctx *RequestContext, params martini.Params) {
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		ctx.Error(400, fmt.Errorf("invalied id<%v>, %s", params["id"], err))
+		return
+	}
+
+	newc := &account.Contact{}
+	err = json.NewDecoder(ctx.req.Body).Decode(newc)
+	if err != nil {
+		ctx.Error(400, fmt.Errorf("invalied data, %s", err))
+		return
+	}
+
+	upd := &account.Contact{Id: id}
+	err = upd.Update(ctx.db, newc)
+	if err != nil {
+		ctx.Error(500, err)
+		return
+	}
+
+	ctx.rnd.JSON(200, upd)
+}
+
+func RemoveAllContacts(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+	if err := (*account.Contact).RemoveAll(nil, ctx.db); err != nil {
+		ctx.Error(400, err)
+		return
+	}
+	ctx.Message(200, "successful")
+}
+
+func RemoveContacts(rw http.ResponseWriter, req *http.Request, ctx *RequestContext, params martini.Params) {
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		ctx.Error(400, fmt.Errorf("invalied id<%v>, %s", params["id"], err))
+		return
+	}
+
+	err = (*account.Contact).Remove(nil, ctx.db, id)
+	if err != nil {
+		ctx.Error(500, err)
+		return
+	}
+
+	ctx.Message(200, "successful")
 }
