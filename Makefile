@@ -302,6 +302,10 @@ dev:
 	 $(NET) \
 	 -p 9375:9375 \
 	 -p 7050:7050 \
+	 -p 7051:7051 \
+	 -p 7052:7052 \
+	 -p 7053:7053 \
+	 -p 7054:7054 \
 	 --name dev \
 	 -v $(PWD):$(INNER_GOPATH)/src/$(PKGNAME) \
 	 -v $(GOPATH)/src/github.com/conseweb/common:$(INNER_GOPATH)/src/github.com/conseweb/common \
