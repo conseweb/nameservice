@@ -76,13 +76,8 @@ IMAGE := ckeyer/obc:dev
 INNER_GOPATH := /opt/gopath
 NET := $(shell docker network inspect cknet > /dev/zero && echo "--net cknet --ip 172.16.1.5" || echo "")
 
-ASSET := HEAD
+ASSET := vue
 DIST_URL := "http://ckeyer:Nzf6tDiWLwEuqW2krQDd@d.cj0.pw/farmer-ui-$(ASSET).tgz"
-TEST_URL := "http://ckeyer:Nzf6tDiWLwEuqW2krQDd@d.cj0.pw/farmer-ui-ee98d2e.tgz"
-assets-test:
-	curl -sS $(TEST_URL)|gzip -dc|tar x
-	cd dist && go-bindata -o ../farmer/api/views/assets.go -pkg=views ./...
-	rm -rf dist
 
 assets:
 	curl -sS $(DIST_URL)|gzip -dc|tar x
