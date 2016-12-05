@@ -320,8 +320,10 @@ chaincode:
         # be appended depedendent upon the chaincode specification.
         Dockerfile:  |
           FROM ckeyer/obc:dev
-          COPY src $GOPATH/src
-          RUN cp -a $GOPATH/src/github.com/hyperledger/fabric/vendor/* $GOPATH/src/
+          ENV GOARCH="amd64"
+          ENV GOOS="linux"
+          ENV CGO_ENABLED=0
+          COPY src/github.com $GOPATH/src/github.com
           WORKDIR $GOPATH
 
     car:

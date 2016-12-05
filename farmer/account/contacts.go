@@ -22,7 +22,7 @@ func (c *Contact) InitDB(db *sql.DB) error {
 		'name' VARCHAR(32) NOT NULL,
 		'email' VARCHAR(32) UNIQUE,
 		'phone' VARCHAR(16) UNIQUE,
-		'addr' VARCHAR(64) UNIQUE,
+		'addr' VARCHAR(64) NOT NULL,
 		'tag' VARCHAR(16),
 		'description' VARCHAR(255)
 	)`
