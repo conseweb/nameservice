@@ -48,17 +48,18 @@ func (v *Views) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Debugf("FromOwn, OpenFile name: %s, error: %s", name, err.Error())
 		return
 	}
+
 	hdr := r.Header.Get("Accept-Encoding")
 	if strings.Contains(hdr, "gzip") {
 		w.Header().Set("Content-Encoding", "gzip")
 		w.Write(data)
-	} else {
-		gz, err := gzip.NewReader(bytes.NewBuffer(data))
-		if err != nil {
-			w.Write([]byte(err.Error()))
-			return
-		}
-		io.Copy(w, gz)
-		gz.Close()
+		return
 	}
+	gz, err := gzip.NewReader(bytes.NewBuffer(data))
+	if err != nil {
+		w.Write([]byte(err.Error()))
+		return
+	}
+	io.Copy(w, gz)
+	gz.Close()
 }

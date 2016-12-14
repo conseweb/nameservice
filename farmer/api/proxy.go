@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -18,6 +19,48 @@ func GetClient() *http.Client {
 		return proxyClient
 	}
 	return http.DefaultClient
+}
+
+func ProxyTo(way string, to *url.URL) func(http.ResponseWriter, *http.Request, *RequestContext) {
+	return func(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+		cli := GetClient()
+
+		toPath := strings.TrimPrefix(req.URL.Path, way)
+		log.Debugf("proxy %s -> %s", req.URL.Path, toPath)
+		req.RequestURI = ""
+		req.URL.Host = to.Host
+		req.URL.Scheme = to.Scheme
+		req.URL.Path = to.Path + toPath
+		req.Close = true
+		req.Header.Set("Connection", "close")
+
+		log.Debugf("to %s", req.URL.String())
+
+		resp, err := cli.Do(req)
+		if err != nil {
+			ctx.Error(400, err)
+			return
+		}
+
+		for k, vv := range resp.Header {
+			if strings.ToLower(k) == "content-length" {
+				continue
+			}
+			for _, v := range vv {
+				rw.Header().Set(k, v)
+			}
+		}
+
+		rw.WriteHeader(resp.StatusCode)
+		defer resp.Body.Close()
+
+		if resp.StatusCode >= 400 {
+			msg, _ := ioutil.ReadAll(resp.Body)
+			ctx.Error(resp.StatusCode, fmt.Errorf("%s", msg))
+		} else {
+			io.Copy(rw, resp.Body)
+		}
+	}
 }
 
 func ProxyFabric(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	stdlog "log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"github.com/martini-contrib/cors"
 	"github.com/martini-contrib/render"
 	"github.com/op/go-logging"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -59,11 +61,38 @@ type eventHandle struct {
 	es map[string]EventClient
 }
 
-func notFound(w http.ResponseWriter, req *http.Request) {
-	if strings.HasPrefix(req.URL.Path, API_PREFIX) ||
-		strings.HasPrefix(req.URL.Path, SOCKETIO_PREFIX) {
-		w.WriteHeader(http.StatusNotFound)
+func notFound(gateways map[string]*url.URL) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		for way, _ := range gateways {
+			if strings.HasPrefix(req.URL.Path, way) {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+		}
+		for _, v := range []string{API_PREFIX, SOCKETIO_PREFIX} {
+			if strings.HasPrefix(req.URL.Path, v) {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+		}
 	}
+}
+
+func getGatewayRouters() (map[string]*url.URL, error) {
+	gateways := map[string]*url.URL{}
+
+	for k, v := range viper.GetStringMapString("daemon.gateway") {
+		log.Noticef("get setting proxy router, %s --> %s", k, v)
+		way := "/" + strings.Trim(k, "/ \n")
+		to, err := url.Parse(v)
+		if err != nil {
+			log.Errorf("formt URL<%s> failed, error: %s", v, err.Error())
+			return nil, err
+		}
+		gateways[way] = to
+	}
+
+	return gateways, nil
 }
 
 func Serve(d *daepkg.Daemon) error {
@@ -82,8 +111,19 @@ func Serve(d *daepkg.Daemon) error {
 		MaxAge:           time.Second * 864000,
 	}))
 
+	// gateway.
+	gateways, err := getGatewayRouters()
+	if err != nil {
+		return err
+	}
+
+	for way, to := range gateways {
+		m.Any(way+"/**", ProxyTo(way, to))
+		log.Noticef("add proxy router %s --> %s", way, to.String())
+	}
+
 	view := views.New()
-	m.NotFound(notFound, view.ServeHTTP)
+	m.NotFound(notFound(gateways), view.ServeHTTP)
 
 	evt := NewEventHandler()
 	m.Map(evt)
