@@ -83,6 +83,11 @@ daemon:
     # Run mode, 
     dev: true
 
+    # gateway list
+    gateway:
+        # /poe/** -> http://u5.mj:9694/poe/v1/**
+        poe: "http://u5.mj:9694/poe/v1"
+
 
 ###############################################################################
 #
