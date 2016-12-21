@@ -41,6 +41,7 @@ func ProxyTo(way string, to *url.URL) func(http.ResponseWriter, *http.Request, *
 			ctx.Error(400, err)
 			return
 		}
+		defer resp.Body.Close()
 
 		for k, vv := range resp.Header {
 			if strings.ToLower(k) == "content-length" {
@@ -52,14 +53,7 @@ func ProxyTo(way string, to *url.URL) func(http.ResponseWriter, *http.Request, *
 		}
 
 		rw.WriteHeader(resp.StatusCode)
-		defer resp.Body.Close()
-
-		if resp.StatusCode >= 400 {
-			msg, _ := ioutil.ReadAll(resp.Body)
-			ctx.Error(resp.StatusCode, fmt.Errorf("%s", msg))
-		} else {
-			io.Copy(rw, resp.Body)
-		}
+		io.Copy(rw, resp.Body)
 	}
 }
 

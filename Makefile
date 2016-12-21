@@ -306,6 +306,7 @@ dev:
 	 -v $(GOPATH)/src/github.com/conseweb/common:$(INNER_GOPATH)/src/github.com/conseweb/common \
 	 -w $(INNER_GOPATH)/src/$(PKGNAME) \
 	 -v /var/run/docker.sock:/var/run/docker.sock \
+	 -v /data:/data \
 	 -it $(IMAGE) bash
 
 local: local-build daemon
