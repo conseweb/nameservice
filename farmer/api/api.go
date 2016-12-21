@@ -38,6 +38,10 @@ func init() {
 			Path: "github.com/conseweb/common/assets/lepuscoin",
 			Name: "",
 		},
+		"poe": &ccpkg.ChaincodeWrapper{
+			Path: "github.com/conseweb/common/assets/poe",
+			Name: "",
+		},
 	}
 }
 
