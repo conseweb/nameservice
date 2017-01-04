@@ -186,7 +186,7 @@ func Serve(d *daepkg.Daemon) error {
 			}, DeployNameSrvnMW)
 
 			r.Group("/indexer", func(r martini.Router) {
-				r.Post("/files")
+				r.Post("/files/:device_id", SetFileIndex)
 				r.Get("/address/:file_id", GetFileAddr)
 			}, SetIndexerDBMW)
 		}, AuthMW)

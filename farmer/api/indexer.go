@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"strconv"
 
 	"github.com/go-martini/martini"
@@ -47,4 +48,39 @@ func GetFileAddr(ctx *RequestContext, orm *xorm.Engine, params martini.Params) {
 	}
 
 	ctx.rnd.JSON(200, FileWrapper{file, devs[0].Address})
+}
+
+// SetFileIndex /indexer/files/:device_id?clean=false clean old files in this deviceID
+func SetFileIndex(ctx *RequestContext, orm *xorm.Engine, params martini.Params) {
+	devID := params["device_id"]
+	isClean, _ := strconv.ParseBool("clean")
+
+	var files []*indexer.FileInfo
+	err := json.NewDecoder(ctx.req.Body).Decode(&files)
+	if err != nil {
+		ctx.Error(400, err)
+		return
+	}
+
+	if isClean {
+		_, err := orm.Where("device_id = ?", devID).Delete(&indexer.FileInfo{})
+		if err != nil {
+			ctx.Error(500, err)
+			return
+		}
+	}
+
+	insrt := []interface{}{}
+	for _, file := range files {
+		file.DeviceID = devID
+		insrt = append(insrt, file)
+	}
+
+	n, err := orm.Insert(insrt...)
+	if err != nil {
+		ctx.Error(500, err)
+		return
+	}
+
+	ctx.Message(201, n)
 }
