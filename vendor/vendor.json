@@ -198,6 +198,24 @@
 			"revisionTime": "2016-02-15T07:46:30Z"
 		},
 		{
+			"checksumSHA1": "sDRC697KuCbpI+1i2VPhyqgAvjs=",
+			"path": "github.com/go-xorm/builder",
+			"revision": "db75972580de4a7c6c20fff5b16a924c3de3fa12",
+			"revisionTime": "2016-12-14T02:05:24Z"
+		},
+		{
+			"checksumSHA1": "vP2Tj5DdAFBfh4SdXcbDskxThPg=",
+			"path": "github.com/go-xorm/core",
+			"revision": "87aca223378aab7a4bf31ef53f20fde4997ad793",
+			"revisionTime": "2016-12-14T03:05:06Z"
+		},
+		{
+			"checksumSHA1": "G1SaluvDEsk1j8/lEmkenVk7k88=",
+			"path": "github.com/go-xorm/xorm",
+			"revision": "d75356fc733fce7683c6d961fc2aeb16ededc8ef",
+			"revisionTime": "2016-12-24T11:20:19Z"
+		},
+		{
 			"path": "github.com/gocraft/web",
 			"revision": "3fd2ffd35c9233bfe91caa84e9c09d7cf8fae964",
 			"revisionTime": "2015-10-06T12:17:10-04:00"

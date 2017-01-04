@@ -3,6 +3,9 @@ package api
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/go-martini/martini"
+	"github.com/hyperledger/fabric/farmer/indexer"
 )
 
 // need user login
@@ -56,4 +59,13 @@ func DeployNameSrvnMW(rw http.ResponseWriter, req *http.Request, ctx *RequestCon
 		ctx.Error(400, err)
 		return
 	}
+}
+
+func SetIndexerDBMW(ctx *RequestContext, mc martini.Context) {
+	orm, err := indexer.InitDB()
+	if err != nil {
+		ctx.Error(500, err)
+		return
+	}
+	mc.Map(orm)
 }
