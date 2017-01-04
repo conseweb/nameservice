@@ -28,7 +28,7 @@ type FileInfo struct {
 }
 
 type Device struct {
-	ID      string `xorm:"pk autoincr" json:"id"`
+	ID      string `xorm:"pk" json:"id"`
 	Address string `xorm:"notnull index" json:"address"`
 }
 

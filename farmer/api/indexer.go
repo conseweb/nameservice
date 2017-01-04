@@ -84,3 +84,43 @@ func SetFileIndex(ctx *RequestContext, orm *xorm.Engine, params martini.Params) 
 
 	ctx.Message(201, n)
 }
+
+func OnlineDevice(ctx *RequestContext, orm *xorm.Engine, params martini.Params) {
+	devID := params["device_id"]
+
+	var dev indexer.Device
+
+	err := json.NewDecoder(ctx.req.Body).Decode(&dev)
+	if err != nil {
+		ctx.Error(400, "invalid address")
+		return
+	}
+
+	_, err = orm.Where("device_id = ?", devID).Delete(&indexer.Device{})
+	if err != nil {
+		ctx.Error(500, err)
+		return
+	}
+
+	dev.ID = devID
+
+	_, err = orm.Insert(dev)
+	if err != nil {
+		ctx.Error(500, err)
+		return
+	}
+
+	ctx.Message(201, "ok")
+}
+
+func OfflineDevice(ctx *RequestContext, orm *xorm.Engine, params martini.Params) {
+	devID := params["device_id"]
+
+	_, err := orm.Where("device_id = ?", devID).Delete(&indexer.Device{})
+	if err != nil {
+		ctx.Error(500, err)
+		return
+	}
+
+	ctx.Message(200, "ok")
+}
