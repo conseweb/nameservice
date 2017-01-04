@@ -35,3 +35,25 @@ func DeployLepuscoinMW(rw http.ResponseWriter, req *http.Request, ctx *RequestCo
 		return
 	}
 }
+
+func DeployNameSrvnMW(rw http.ResponseWriter, req *http.Request, ctx *RequestContext) {
+	lcc, err := ccManager.Get("nameservice", "deploy", "deploy")
+	if err == ErrNotDeploy {
+		name, err := lcc.Deploy()
+		if err != nil {
+			ctx.Error(500, err)
+			return
+		}
+
+		if name != "" {
+			ccManager.SetName("nameservice", name)
+			lcc.Name = name // for return frontend
+			log.Debugf("set nameservice chaincode name: %s", name)
+		}
+		ctx.Error(501, fmt.Errorf("nameservice chaincode is deploying, please wait."))
+		return
+	} else if err != nil {
+		ctx.Error(400, err)
+		return
+	}
+}

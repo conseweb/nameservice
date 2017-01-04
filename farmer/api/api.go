@@ -42,6 +42,10 @@ func init() {
 			Path: "github.com/conseweb/common/assets/poe",
 			Name: "",
 		},
+		"nameservice": &ccpkg.ChaincodeWrapper{
+			Path: "github.com/conseweb/common/assets/nameservice",
+			Name: "",
+		},
 	}
 }
 
@@ -143,21 +147,25 @@ func Serve(d *daepkg.Daemon) error {
 
 		/// need user auth
 		r.Group("", func(r martini.Router) {
-			r.Get("/account", GetAccountState)
-			r.Delete("/account/logout", Logout)
-			r.Patch("/account/setting", Hello)
+			r.Group("/account", func(r martini.Router) {
+				r.Get("", GetAccountState)
+				r.Delete("/logout", Logout)
+				r.Patch("/setting", Hello)
 
-			// local contacts
-			r.Get("/account/contacts", ListContacts)
-			r.Post("/account/contacts", AddContacts)
-			r.Patch("/account/contacts/:id", UpdateContacts)
-			r.Delete("/account/contacts", RemoveAllContacts)
-			r.Delete("/account/contacts/:id", RemoveContacts)
+				// local contacts
+				r.Get("/contacts", ListContacts)
+				r.Post("/contacts", AddContacts)
+				r.Patch("/contacts/:id", UpdateContacts)
+				r.Delete("/contacts", RemoveAllContacts)
+				r.Delete("/contacts/:id", RemoveContacts)
+			})
 
-			r.Post("/device/bind", Hello)
-			r.Delete("/device/unbind", Hello)
-			r.Post("/device/tx", NewTx)
-			r.Get("/device/coinbase_tx/:addr", GetCoinBaseTx)
+			r.Group("/device", func(r martini.Router) {
+				r.Post("/bind", Hello)
+				r.Delete("/unbind", Hello)
+				r.Post("/tx", NewTx)
+				r.Get("/coinbase_tx/:addr", GetCoinBaseTx)
+			})
 
 			/// need deploy lepuscoin chaincode.
 			r.Group("/lepuscoin", func(r martini.Router) {
@@ -169,6 +177,14 @@ func Serve(d *daepkg.Daemon) error {
 				r.Get("/coin", QueryCoin)
 				r.Get("/tx/:tx", QueryTx)
 			}, DeployLepuscoinMW)
+
+			/// name service
+			r.Group("/namesrv", func(r martini.Router) {
+				r.Post("/deploy", DeployNameService)
+				r.Post("/new", NewNameServiceKV)
+				r.Delete("/:key", RemoveNameServiceKV)
+			}, DeployNameSrvnMW)
+
 		}, AuthMW)
 
 		r.Post("/cc/deploy", DeployCC)
