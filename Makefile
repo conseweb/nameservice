@@ -79,6 +79,9 @@ NET := $(shell docker network inspect cknet > /dev/zero && echo "--net cknet --i
 ASSET := vue
 DIST_URL := "http://ckeyer:Nzf6tDiWLwEuqW2krQDd@d.cj0.pw/farmer-ui-$(ASSET).tgz"
 
+GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
+IMAGE_NAME := hub.conseweb.com:5000/farmer:$(GIT_BRANCH)
+
 assets:
 	curl -sS $(DIST_URL)|gzip -dc|tar x
 	cd dist && go-bindata -o ../farmer/api/views/assets.go -pkg=views ./...
@@ -314,7 +317,22 @@ local: local-build daemon
 local-build:
 	go build -o bin/farmer ./peer/main.go
 
+build-inDocker:
+	docker run --rm \
+	 --name farmer-building \
+	 -v $(PWD):$(INNER_GOPATH)/src/$(PKGNAME) \
+	 -w $(INNER_GOPATH)/src/$(PKGNAME) \
+	 $(IMAGE) make local-build
+
+build-image: #build-inDocker
+	-rm -rf ./build
+	mkdir build
+	cp bin/farmer build/
+	cp -a $(GOPATH)/src/github.com/conseweb/common build/
+	docker build -t $(IMAGE_NAME) -f Dockerfile.run .
+
 daemon: 
+	-rm /data/hyperledger/farmer.pid
 	./bin/farmer farmer start
 
 clean-runing-file:

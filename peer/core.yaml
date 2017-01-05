@@ -23,7 +23,7 @@ rest:
     enabled: true
 
     # The address that the REST service will listen on for incoming requests.
-    address: 172.16.1.5:7050
+    address: :7050
 
     validPatterns:
 
@@ -69,6 +69,7 @@ logging:
     version: warning
     farmer: debug
     daemon: debug
+    filesystem: debug
     
 
 ###############################################################################
@@ -107,6 +108,9 @@ farmer:
 ###############################################################################
 indexer:
     
+    # file storage driver  'local', 'ipfs'
+    fstype: local
+    localChroot: /tmp/diego
 
 ###############################################################################
 #
@@ -127,9 +131,9 @@ peer:
     networkId: dev
 
     # The Address this Peer will listen on
-    listenAddress: 172.16.1.5:7051
+    listenAddress: :7051
     # The Address this Peer will bind to for providing services
-    address: 172.16.1.5:7051
+    address: :7051
     # Whether the Peer should programmatically determine the address to bind to.
     # This case is useful for docker containers.
     addressAutoDetect: false

@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-martini/martini"
 	"github.com/hyperledger/fabric/farmer/indexer"
+	"github.com/hyperledger/fabric/storage/localfs"
+	"github.com/spf13/viper"
 )
 
 // need user login
@@ -68,4 +70,32 @@ func SetIndexerDBMW(ctx *RequestContext, mc martini.Context) {
 		return
 	}
 	mc.Map(orm)
+}
+
+func SetFsDriverMW(rw http.ResponseWriter, req *http.Request, ctx *RequestContext, mc martini.Context) {
+	if fsDriver != nil {
+		mc.Map(fsDriver)
+		return
+	}
+
+	fstype := viper.GetString("farmer.fstype")
+	rootPath := viper.GetString("farmer.localChroot")
+	var err error
+
+	switch fstype {
+	case "ipfs":
+		ctx.Error(500, "TODO")
+		return
+	case "local":
+		log.Infof("farmer use local filesystem")
+		fsDriver, err = localfs.NewDriver(rootPath)
+		if err != nil {
+			ctx.Error(500, "get chroot path failed.")
+			return
+		}
+	default:
+		ctx.Error(500, fmt.Errorf("unknown storage type %s", fstype))
+		return
+	}
+	mc.Map(fsDriver)
 }
