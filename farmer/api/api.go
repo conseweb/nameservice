@@ -185,6 +185,12 @@ func Serve(d *daepkg.Daemon) error {
 				r.Delete("/:key", RemoveNameServiceKV)
 			}, DeployNameSrvnMW)
 
+			r.Group("/indexer", func(r martini.Router) {
+				r.Post("/online/:device_id", OnlineDevice)
+				r.Post("/offline/:device_id", OfflineDevice)
+				r.Post("/files/:device_id", SetFileIndex)
+				r.Get("/address/:file_id", GetFileAddr)
+			}, SetIndexerDBMW)
 		}, AuthMW)
 
 		r.Post("/cc/deploy", DeployCC)
