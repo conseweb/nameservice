@@ -13,6 +13,7 @@ import (
 	"github.com/hyperledger/fabric/farmer/api/views"
 	daepkg "github.com/hyperledger/fabric/farmer/daemon"
 	ccpkg "github.com/hyperledger/fabric/peer/chaincode"
+	"github.com/hyperledger/fabric/storage"
 	"github.com/martini-contrib/cors"
 	"github.com/martini-contrib/render"
 	"github.com/op/go-logging"
@@ -28,6 +29,7 @@ var (
 	log         *logging.Logger
 	daemon      *daepkg.Daemon
 	proxyClient *http.Client
+	fsDriver    storage.StorageDriver
 
 	ccManager = &chaincodeManager{}
 )
@@ -185,12 +187,23 @@ func Serve(d *daepkg.Daemon) error {
 				r.Delete("/:key", RemoveNameServiceKV)
 			}, DeployNameSrvnMW)
 
+			/// file indexer
 			r.Group("/indexer", func(r martini.Router) {
 				r.Post("/online/:device_id", OnlineDevice)
 				r.Post("/offline/:device_id", OfflineDevice)
 				r.Post("/files/:device_id", SetFileIndex)
 				r.Get("/address/:file_id", GetFileAddr)
 			}, SetIndexerDBMW)
+
+			// filesystem
+			r.Group("/fs", func(r martini.Router) {
+				r.Get("/ls/**", GetFileList)
+				r.Get("/cat/**", GetFile)
+				r.Put("/new/**", UploadFile)
+				r.Post("/mkdir/**", NewDir)
+				r.Patch("/rename/**", RenameFile)
+				r.Delete("/rm/**", RemoveFile)
+			}, SetFsDriverMW)
 		}, AuthMW)
 
 		r.Post("/cc/deploy", DeployCC)

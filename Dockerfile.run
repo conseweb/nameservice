@@ -1,0 +1,12 @@
+FROM ckeyer/obc:run
+
+ENV GOPATH=/opt/gopath
+
+COPY build/farmer ${GOPATH}/bin/farmer
+COPY peer/core.yaml ${GOPATH}/src/github.com/hyperledger/fabric/peer/core.yaml
+COPY consensus/noops/config.yaml ${GOPATH}/src/github.com/hyperledger/fabric/consensus/noops/config.yaml
+COPY consensus/pbft/config.yaml ${GOPATH}/src/github.com/hyperledger/fabric/consensus/pbft/config.yaml
+
+WORKDIR ${GOPATH}/bin/
+
+CMD ["./farmer", "farmer", "start"]
